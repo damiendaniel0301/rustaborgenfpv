@@ -249,6 +249,44 @@ main {
   justify-content: flex-end;
 }
 
+.delete-student-panel {
+  display: grid;
+  flex-basis: 100%;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.delete-student-panel label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.delete-student-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 8px;
+}
+
+.delete-student-controls input {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: #fff;
+}
+
+.delete-student-message {
+  min-height: 18px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .student-tab {
   display: flex;
   align-items: center;
@@ -711,6 +749,10 @@ progress::-webkit-progress-value {
   .student-tab {
     justify-content: space-between;
     width: 100%;
+  }
+
+  .delete-student-controls {
+    grid-template-columns: 1fr;
   }
 
   .review-filter {
