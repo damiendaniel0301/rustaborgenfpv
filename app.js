@@ -13,6 +13,8 @@ const liftoffExamExercises = [
   }
 ];
 
+const deleteStudentPassword = "rustaborgenfpv";
+
 function blankProgress() {
   return {
     step1: {
@@ -515,6 +517,9 @@ function renderReview() {
 function renderStudentTabs() {
   const list = document.querySelector("#studentTabList");
   const selectedId = activeStudentId();
+  const selectedStudent = activeStudent();
+  const deleteButton = document.querySelector("#deleteStudentButton");
+  const deleteMessage = document.querySelector("#deleteStudentMessage");
 
   list.innerHTML = state.students
     .map((student) => {
@@ -527,6 +532,16 @@ function renderStudentTabs() {
       `;
     })
     .join("");
+
+  if (deleteButton) {
+    deleteButton.disabled = !selectedStudent || selectedStudent.id === "gjest";
+  }
+
+  if (deleteMessage && selectedStudent?.id === "gjest") {
+    deleteMessage.textContent = "Standardbrukeren Gjest kan ikke slettes.";
+  } else if (deleteMessage && !deleteMessage.dataset.locked) {
+    deleteMessage.textContent = "";
+  }
 }
 
 function studentProgressPercent(student, stepKey) {
@@ -592,6 +607,37 @@ document.querySelectorAll(".nav-button").forEach((button) => {
 document.querySelector("#reviewStepSelect").addEventListener("change", (event) => {
   reviewStep = event.target.value;
   renderReview();
+});
+
+document.querySelector("#deleteStudentButton").addEventListener("click", () => {
+  const selectedStudent = activeStudent();
+  const passwordInput = document.querySelector("#deleteStudentPassword");
+  const message = document.querySelector("#deleteStudentMessage");
+  const password = passwordInput.value.trim();
+
+  message.dataset.locked = "true";
+
+  if (!selectedStudent || selectedStudent.id === "gjest") {
+    message.textContent = "Standardbrukeren Gjest kan ikke slettes.";
+    return;
+  }
+
+  if (password !== deleteStudentPassword) {
+    message.textContent = "Feil passord. Brukeren ble ikke slettet.";
+    return;
+  }
+
+  state.students = state.students.filter((student) => student.id !== selectedStudent.id);
+  const nextStudent = state.students.find((student) => student.id !== "gjest") || state.students[0];
+  state.selectedStudentId = nextStudent?.id || "gjest";
+  if (state.currentStudentId === selectedStudent.id) {
+    state.currentStudentId = state.selectedStudentId;
+  }
+  loadActiveStudentProgress();
+  passwordInput.value = "";
+  message.textContent = `Brukeren ${selectedStudent.name} er slettet.`;
+  saveState();
+  render();
 });
 
 document.querySelector("#continueButton").addEventListener("click", () => {
