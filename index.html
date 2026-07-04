@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#17243a" />
+    <meta name="application-name" content="Droneflyver" />
+    <meta name="apple-mobile-web-app-title" content="Droneflyver" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Droneflyver</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/droneflyver-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/droneflyver-icon.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img">
+              <path d="M24 17h10l5 5-5 5H24z" />
+              <path d="M24 17H14l-5 5 5 5h10z" />
+              <path d="M21 14h6v16h-6z" />
+              <circle cx="8" cy="14" r="6" />
+              <circle cx="40" cy="14" r="6" />
+              <circle cx="8" cy="34" r="6" />
+              <circle cx="40" cy="34" r="6" />
+            </svg>
+          </div>
+          <div>
+            <strong>Droneflyver</strong>
+            <span>Simulator til tinywhoop</span>
+          </div>
+        </div>
+
+        <section class="login-panel" aria-labelledby="login-title">
+          <h2 id="login-title">Innlogging</h2>
+          <label for="nameInput">Navn</label>
+          <input id="nameInput" autocomplete="name" placeholder="Skriv navnet ditt" />
+          <div class="role-tabs" role="group" aria-label="Velg tilgang">
+            <button class="role-button active" type="button" data-role="student">Elev</button>
+            <button class="role-button" type="button" data-role="instructor">Instruktør</button>
+          </div>
+          <button id="loginButton" class="primary-button" type="button">Logg inn</button>
+        </section>
+
+        <nav class="side-nav" aria-label="Hovedvalg">
+          <button class="nav-button active" type="button" data-view="dashboard">Oversikt</button>
+          <button class="nav-button" type="button" data-view="step1">Steg 1 - Simulator</button>
+          <button class="nav-button" type="button" data-view="step2">Steg 2 - Tinywhoop</button>
+          <button class="nav-button instructor-only" type="button" data-view="review">Vurdering</button>
+        </nav>
+
+        <div class="account-card">
+          <span>Innlogget som</span>
+          <strong id="currentUser">Gjest</strong>
+          <small id="currentRole">Elev</small>
+        </div>
+
+        <footer class="creator-credit">
+          <span>Laget av</span>
+          <strong>Daniel Markussen</strong>
+        </footer>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Trinnvis progresjon</p>
+            <h1 id="viewTitle">Oversikt</h1>
+          </div>
+          <div class="progress-ring" aria-label="Total progresjon">
+            <span id="totalProgress">0%</span>
+          </div>
+        </header>
+
+        <section id="instructorStudentTabs" class="instructor-student-tabs instructor-only hidden" aria-label="Velg elev">
+          <div>
+            <span>Instruktørvisning</span>
+            <strong>Velg elev å kontrollere</strong>
+          </div>
+          <div id="studentTabList" class="student-tab-list"></div>
+        </section>
+
+        <section id="dashboardView" class="view active-view">
+          <div class="status-grid">
+            <article class="status-panel simulator-panel">
+              <span>Steg 1</span>
+              <h2>Lær å fly drone i Liftoff</h2>
+              <p>Bygg trygg styring i simulator før ekte flyvning.</p>
+              <progress id="step1Progress" max="100" value="0"></progress>
+            </article>
+            <article class="status-panel whoop-panel">
+              <span>Steg 2</span>
+              <h2>Lær å fly tinywhoop</h2>
+              <p>Ta kontrollen inn i små rom og presise baner.</p>
+              <progress id="step2Progress" max="100" value="0"></progress>
+            </article>
+          </div>
+          <div class="next-action">
+            <div>
+              <span>Neste anbefalte aktivitet</span>
+              <strong id="nextAction">Start med trinn 1 i Liftoff</strong>
+            </div>
+            <button class="primary-button" id="continueButton" type="button">Fortsett</button>
+          </div>
+        </section>
+
+        <section id="step1View" class="view">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Steg 1</p>
+              <h2>Lær å fly drone i simulator</h2>
+            </div>
+            <a class="link-button" href="https://store.steampowered.com/app/410340/Liftoff_FPV_Drone_Racing/" target="_blank" rel="noreferrer">Åpne Liftoff</a>
+          </div>
+          <div id="step1Tasks" class="task-list"></div>
+          <div class="exam-panel">
+            <div>
+              <p class="eyebrow">Avsluttende eksamen</p>
+              <h3>Trinn 16 - Eksamensflyvninger</h3>
+              <p>Bruk drone: Racewhoop 2.5", bruk kamera vinkel 10 grader, og last opp video for hver øvelse.</p>
+              <p>Flyvningen skal gjennomføres kontrollert uten uhell.</p>
+            </div>
+            <div class="exam-state" id="liftoffExamState"></div>
+            <div class="recording-guide">
+              <div>
+                <p class="eyebrow">Video i Steam</p>
+                <h4>Klipp og lagre eksamensvideo</h4>
+                <p>Åpne Steam-overlegg med Shift + Tab, bruk Game Recording, klipp rundt selve løpet og lagre klippet før opplasting.</p>
+              </div>
+              <img class="recording-guide-image" src="assets/steam-video-guide.png" alt="Slik klipper og lagrer du video i Steam" />
+            </div>
+            <div id="liftoffExerciseList" class="exam-exercise-list"></div>
+          </div>
+        </section>
+
+        <section id="step2View" class="view">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Steg 2</p>
+              <h2>Lær å fly tinywhoop</h2>
+            </div>
+            <span class="badge" id="step2Lock">Krever bestått steg 1</span>
+          </div>
+          <div id="step2Tasks" class="task-list"></div>
+          <div class="exam-panel">
+            <div>
+              <p class="eyebrow">Avsluttende eksamen</p>
+              <h3>Instruktør vurderer ekte flyvning</h3>
+              <p>Etter praktisk vurdering kan instruktør registrere bestått i appen.</p>
+            </div>
+            <div class="exam-state" id="tinywhoopExamState"></div>
+          </div>
+        </section>
+
+        <section id="reviewView" class="view">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Instruktør</p>
+              <h2>Vurder elevens eksamener</h2>
+              <p class="review-help">Vurderinger kan endres hvis du trykker feil. Skriv eller oppdater merknaden, velg ny status, eller fjern vurderingen helt.</p>
+            </div>
+            <button id="resetDemo" class="secondary-button" type="button">Nullstill demo</button>
+          </div>
+          <div class="review-filter">
+            <label for="reviewStepSelect">Velg steg</label>
+            <select id="reviewStepSelect">
+              <option value="step1">Steg 1 - Simulator</option>
+              <option value="step2">Steg 2 - Tinywhoop</option>
+            </select>
+          </div>
+          <div id="reviewList" class="review-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

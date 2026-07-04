@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Droneflyver</title>
+  <desc id="desc">Drone icon for Droneflyver web app</desc>
+  <rect width="512" height="512" rx="96" fill="#17243a"/>
+  <circle cx="128" cy="132" r="58" fill="#eef4ff"/>
+  <circle cx="384" cy="132" r="58" fill="#eef4ff"/>
+  <circle cx="128" cy="380" r="58" fill="#eef4ff"/>
+  <circle cx="384" cy="380" r="58" fill="#eef4ff"/>
+  <circle cx="128" cy="132" r="24" fill="#2367d1"/>
+  <circle cx="384" cy="132" r="24" fill="#2367d1"/>
+  <circle cx="128" cy="380" r="24" fill="#2367d1"/>
+  <circle cx="384" cy="380" r="24" fill="#2367d1"/>
+  <path d="M159 176h194l54 80-54 80H159l-54-80 54-80Z" fill="#2367d1"/>
+  <rect x="232" y="130" width="48" height="252" rx="22" fill="#eef4ff"/>
+  <rect x="130" y="232" width="252" height="48" rx="22" fill="#eef4ff"/>
+  <circle cx="256" cy="256" r="54" fill="#1d8f62"/>
+  <path d="M235 258l15 16 31-39" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
