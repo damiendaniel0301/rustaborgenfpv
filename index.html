@@ -81,6 +81,14 @@
             <strong>Velg elev å kontrollere</strong>
           </div>
           <div id="studentTabList" class="student-tab-list"></div>
+          <div class="delete-student-panel">
+            <label for="deleteStudentPassword">Slett valgt elev</label>
+            <div class="delete-student-controls">
+              <input id="deleteStudentPassword" type="password" autocomplete="off" placeholder="Passord for sletting" />
+              <button id="deleteStudentButton" class="danger-button" type="button">Slett bruker</button>
+            </div>
+            <p id="deleteStudentMessage" class="delete-student-message" aria-live="polite"></p>
+          </div>
         </section>
 
         <section id="dashboardView" class="view active-view">
