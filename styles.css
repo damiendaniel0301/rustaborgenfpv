@@ -565,6 +565,15 @@ progress::-webkit-progress-value {
   gap: 10px;
 }
 
+.upload-help {
+  margin: 0;
+  font-size: 13px;
+}
+
+.inline-link {
+  width: fit-content;
+}
+
 .exam-state {
   color: var(--muted);
   font-weight: 700;
