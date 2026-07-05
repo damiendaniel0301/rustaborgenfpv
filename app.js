@@ -407,6 +407,7 @@ function renderLiftoffExerciseList() {
   list.innerHTML = liftoffExamExercises
     .map((exercise, index) => {
       const saved = state.step1.exam.exercises[index];
+      const videoUrl = safeUrl(saved.youtube);
       return `
         <article class="exam-exercise-card">
           <div>
@@ -416,13 +417,12 @@ function renderLiftoffExerciseList() {
             <p>Bruk drone: Racewhoop 2.5" · Bruk kamera vinkel 10 grader</p>
             <p>Status: ${exerciseStatusText(saved.status)}</p>
             ${saved.note ? `<p><strong>Merknad fra instruktør:</strong> ${escapeHtml(saved.note)}</p>` : ""}
-            ${saved.fileName ? `<p>Opplastet fil: ${saved.fileName}</p>` : ""}
-            ${saved.youtube ? `<p><a href="${saved.youtube}" target="_blank" rel="noreferrer">Åpne opplastet lenke</a></p>` : ""}
+            ${videoUrl ? `<p><a class="link-button inline-link" href="${videoUrl}" target="_blank" rel="noreferrer">Se video</a></p>` : ""}
           </div>
           <div class="exam-controls student-only">
-            <input data-exam-file="${index}" type="file" accept="video/*" />
-            <input data-exam-link="${index}" type="url" placeholder="Lim inn opplastingslenke" />
-            <button class="primary-button" type="button" data-submit-exercise="${index}">Last opp video</button>
+            <p class="upload-help">Last opp videoen til YouTube, Google Drive eller lignende, og lim inn en delbar lenke her.</p>
+            <input data-exam-link="${index}" type="url" placeholder="Lim inn delbar videolink" value="${escapeHtml(saved.youtube)}" />
+            <button class="primary-button" type="button" data-submit-exercise="${index}">Send videolink</button>
           </div>
         </article>
       `;
@@ -446,6 +446,15 @@ function escapeHtml(value = "") {
     .replaceAll("'", "&#039;");
 }
 
+function safeUrl(value = "") {
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
 function renderReview() {
   const list = document.querySelector("#reviewList");
   const cards = [];
@@ -461,6 +470,7 @@ function renderReview() {
   if (reviewStep === "step1") {
     liftoffExamExercises.forEach((exercise, index) => {
       const saved = liftoff.exercises[index];
+      const videoUrl = safeUrl(saved.youtube);
       const passLabel = saved.status === "passed" ? "Godkjent" : "Endre til godkjent";
       const failLabel = saved.status === "failed" ? "Ikke godkjent" : "Endre til ikke godkjent";
 
@@ -474,8 +484,7 @@ function renderReview() {
             <p>Bruk drone: Racewhoop 2.5" · Bruk kamera vinkel 10 grader</p>
             <p>Status: ${exerciseStatusText(saved.status)}</p>
             ${saved.note ? `<p><strong>Lagret merknad:</strong> ${escapeHtml(saved.note)}</p>` : ""}
-            ${saved.fileName ? `<p>Video: ${saved.fileName}</p>` : ""}
-            ${saved.youtube ? `<p><a href="${saved.youtube}" target="_blank" rel="noreferrer">Åpne opplastet lenke</a></p>` : ""}
+            ${videoUrl ? `<p><a class="link-button inline-link" href="${videoUrl}" target="_blank" rel="noreferrer">Se elevens video</a></p>` : ""}
           </div>
           <div class="review-actions">
             <label class="review-note-label" for="reviewNote${index}">Merknad til eleven</label>
@@ -703,18 +712,18 @@ document.body.addEventListener("click", (event) => {
 
   if (submitExercise) {
     const index = Number(submitExercise.dataset.submitExercise);
-    const file = document.querySelector(`[data-exam-file="${index}"]`).files[0];
     const youtube = document.querySelector(`[data-exam-link="${index}"]`).value.trim();
+    const videoUrl = safeUrl(youtube);
 
-    if (!file && !youtube) {
-      document.querySelector("#liftoffExamState").textContent = "Velg en videofil eller legg inn en opplastingslenke først.";
+    if (!videoUrl) {
+      document.querySelector("#liftoffExamState").textContent = "Lim inn en gyldig delbar videolink først, for eksempel fra YouTube eller Google Drive.";
       return;
     }
 
     state.step1.exam.exercises[index] = {
       status: "submitted",
-      fileName: file ? file.name : "Opplastingslenke",
-      youtube,
+      fileName: "Videolink",
+      youtube: videoUrl,
       note: ""
     };
     updateLiftoffExamStatus();
