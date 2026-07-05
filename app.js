@@ -162,7 +162,8 @@ const views = {
   step1: document.querySelector("#step1View"),
   step2: document.querySelector("#step2View"),
   certification: document.querySelector("#certificationView"),
-  review: document.querySelector("#reviewView")
+  review: document.querySelector("#reviewView"),
+  summary: document.querySelector("#summaryView")
 };
 
 function loadState() {
@@ -376,7 +377,8 @@ function setView(viewName) {
     step1: "Steg 1: Liftoff",
     step2: "Steg 2: Tinywhoop",
     certification: "Hvordan ta sertifisering?",
-    review: "Vurdering"
+    review: "Vurdering",
+    summary: "Oppsummering"
   };
   document.querySelector("#viewTitle").textContent = titles[viewName];
 }
