@@ -27,7 +27,7 @@ function blankProgress() {
     },
     step2: {
       tasks: [false, false, false, false],
-      exam: { status: "not_started" }
+      exam: { status: "not_started", youtube: "", fileName: "", note: "" }
     }
   };
 }
@@ -212,7 +212,7 @@ function normalizeStudent(student) {
   progress.step1.exam = normalizeLiftoffExam(student.step1?.exam);
   updateLiftoffExamStatus(progress.step1.exam);
   progress.step2.tasks = normalizeTasks(student.step2?.tasks, lessons.step2.length);
-  progress.step2.exam = student.step2?.exam || progress.step2.exam;
+  progress.step2.exam = normalizeTinywhoopExam(student.step2?.exam);
 
   return {
     id: student.id || studentIdFromName(student.name),
@@ -311,6 +311,15 @@ function normalizeLiftoffExam(exam = {}) {
       youtube: savedExercises[index]?.youtube || "",
       note: savedExercises[index]?.note || ""
     }))
+  };
+}
+
+function normalizeTinywhoopExam(exam = {}) {
+  return {
+    status: exam.status || "not_started",
+    youtube: exam.youtube || "",
+    fileName: exam.fileName || "",
+    note: exam.note || ""
   };
 }
 
@@ -431,8 +440,10 @@ function renderExams() {
 
   document.querySelector("#liftoffExamState").textContent =
     `${examText(liftoff, "step1")} - ${approvedExercises} av ${liftoffExamExercises.length} øvelser godkjent`;
-  document.querySelector("#tinywhoopExamState").textContent = examText(tinywhoop, "step2");
+  document.querySelector("#tinywhoopExamState").textContent =
+    `${examText(tinywhoop, "step2")}${tinywhoop.youtube ? " - videolink sendt" : ""}`;
   renderLiftoffExerciseList();
+  renderTinywhoopSubmission();
 
   const step2Lock = document.querySelector("#step2Lock");
   const open = state.step1.exam.status === "passed";
@@ -467,6 +478,21 @@ function renderLiftoffExerciseList() {
       `;
     })
     .join("");
+}
+
+function renderTinywhoopSubmission() {
+  const target = document.querySelector("#tinywhoopSubmission");
+  if (!target) return;
+
+  const locked = state.step1.exam.status !== "passed";
+  const videoUrl = safeUrl(state.step2.exam.youtube);
+
+  target.innerHTML = `
+    <p class="upload-help">Etter avtale med instruktør kan du laste opp video til YouTube, Google Drive eller lignende, og lime inn en delbar lenke her.</p>
+    ${videoUrl ? `<p><a class="link-button inline-link" href="${videoUrl}" target="_blank" rel="noreferrer">Se innsendt video</a></p>` : ""}
+    <input id="tinywhoopVideoLink" type="url" placeholder="Lim inn delbar videolink" value="${escapeHtml(state.step2.exam.youtube)}" ${locked ? "disabled" : ""} />
+    <button class="primary-button" type="button" data-submit-tinywhoop-video ${locked ? "disabled" : ""}>Send videolink</button>
+  `;
 }
 
 function exerciseStatusText(status) {
@@ -539,6 +565,7 @@ function renderReview() {
 
   const tinywhoopPassLabel = tinywhoop.status === "passed" ? "Bestått" : "Endre til bestått";
   const tinywhoopFailLabel = tinywhoop.status === "failed" ? "Ikke bestått" : "Endre til ikke bestått";
+  const tinywhoopVideoUrl = safeUrl(tinywhoop.youtube);
 
   if (reviewStep === "step2") {
     cards.push(`
@@ -548,9 +575,14 @@ function renderReview() {
           <h3>${selectedStudent.name}</h3>
           <p>Status: ${examText(tinywhoop, "step2")}</p>
           <p>Registreres etter praktisk vurdering med instruktør.</p>
+          <p>Eksamensflyvning krever normalt fysisk at instruktør ser på. Etter avtale med instruktør kan eksamensflyvning gjøres gjennom video der eleven viser de ferdigheter og kontroll som kreves.</p>
+          ${tinywhoopVideoUrl ? `<p><a class="link-button inline-link" href="${tinywhoopVideoUrl}" target="_blank" rel="noreferrer">Se elevens tinywhoop-video</a></p>` : ""}
+          ${tinywhoop.note ? `<p><strong>Lagret merknad:</strong> ${escapeHtml(tinywhoop.note)}</p>` : ""}
         </div>
         <div class="review-actions">
           <p class="review-change-help">Kan endres etter registrering hvis instruktør trykker feil.</p>
+          <label class="review-note-label" for="tinywhoopReviewNote">Merknad til eleven</label>
+          <textarea id="tinywhoopReviewNote" class="review-note" data-step2-review-note rows="4" placeholder="Skriv begrunnelse eller hva eleven bør forbedre">${escapeHtml(tinywhoop.note)}</textarea>
           <button class="primary-button" type="button" data-pass="step2" ${state.step1.exam.status !== "passed" ? "disabled" : ""}>${tinywhoopPassLabel}</button>
           <button class="danger-button" type="button" data-fail="step2" ${state.step1.exam.status !== "passed" ? "disabled" : ""}>${tinywhoopFailLabel}</button>
           <button class="secondary-button" type="button" data-clear="step2" ${state.step1.exam.status !== "passed" ? "disabled" : ""}>Fjern vurdering</button>
@@ -792,6 +824,7 @@ document.body.addEventListener("click", (event) => {
   const passButton = event.target.closest("[data-pass]");
   const failButton = event.target.closest("[data-fail]");
   const submitExercise = event.target.closest("[data-submit-exercise]");
+  const submitTinywhoopVideo = event.target.closest("[data-submit-tinywhoop-video]");
   const passExercise = event.target.closest("[data-pass-exercise]");
   const failExercise = event.target.closest("[data-fail-exercise]");
   const clearExercise = event.target.closest("[data-clear-exercise]");
@@ -824,13 +857,21 @@ document.body.addEventListener("click", (event) => {
   }
 
   if (passButton) {
-    state[passButton.dataset.pass].exam.status = "passed";
+    const step = passButton.dataset.pass;
+    state[step].exam.status = "passed";
+    if (step === "step2") {
+      state.step2.exam.note = document.querySelector("[data-step2-review-note]")?.value.trim() || "";
+    }
     saveState();
     render();
   }
 
   if (failButton) {
-    state[failButton.dataset.fail].exam.status = "failed";
+    const step = failButton.dataset.fail;
+    state[step].exam.status = "failed";
+    if (step === "step2") {
+      state.step2.exam.note = document.querySelector("[data-step2-review-note]")?.value.trim() || "";
+    }
     saveState();
     render();
   }
@@ -838,6 +879,28 @@ document.body.addEventListener("click", (event) => {
   if (clearButton) {
     const step = clearButton.dataset.clear;
     state[step].exam.status = step === "step2" ? "submitted" : "not_submitted";
+    if (step === "step2") {
+      state.step2.exam.note = document.querySelector("[data-step2-review-note]")?.value.trim() || "";
+    }
+    saveState();
+    render();
+  }
+
+  if (submitTinywhoopVideo) {
+    const youtube = document.querySelector("#tinywhoopVideoLink").value.trim();
+    const videoUrl = safeUrl(youtube);
+
+    if (!videoUrl) {
+      document.querySelector("#tinywhoopExamState").textContent = "Lim inn en gyldig delbar videolink først, for eksempel fra YouTube eller Google Drive.";
+      return;
+    }
+
+    state.step2.exam = {
+      ...state.step2.exam,
+      status: "submitted",
+      fileName: "Videolink",
+      youtube: videoUrl
+    };
     saveState();
     render();
   }
