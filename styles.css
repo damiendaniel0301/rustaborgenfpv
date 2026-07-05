@@ -217,6 +217,10 @@ button {
   background: rgba(255, 255, 255, 0.13);
 }
 
+.nav-summary {
+  margin-top: 10px;
+}
+
 .account-card {
   margin-top: auto;
 }
@@ -679,7 +683,8 @@ progress::-webkit-progress-value {
 }
 
 .certification-notice,
-.certification-card {
+.certification-card,
+.summary-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -709,6 +714,24 @@ progress::-webkit-progress-value {
 
 .certification-card {
   padding: 20px;
+}
+
+.summary-card {
+  max-width: 920px;
+  padding: 24px;
+}
+
+.summary-card p:last-child {
+  margin-bottom: 0;
+}
+
+.summary-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding-left: 22px;
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .certification-card span {
