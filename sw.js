@@ -1,10 +1,12 @@
-const CACHE_NAME = "droneflyver-v16";
+const CACHE_NAME = "droneflyver-v18";
 
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./supabase-sync.js",
+  "./supabase-config.js",
   "./manifest.webmanifest",
   "./assets/droneflyver-icon.svg",
   "./assets/steam-video-guide.png"
