@@ -1,6 +1,6 @@
 {
-  "name": "Droneflyver",
-  "short_name": "Droneflyver",
+  "name": "Veien til FPV",
+  "short_name": "Veien til FPV",
   "description": "Lær å fly drone med trinnvis progresjon, simulator, tinywhoop og instruktørvurdering.",
   "start_url": "./index.html",
   "scope": "./",
