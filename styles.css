@@ -672,6 +672,91 @@ progress::-webkit-progress-value {
   padding: 18px;
 }
 
+.certification-notice,
+.certification-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.certification-notice {
+  padding: 18px;
+  border-color: #f0d59a;
+  background: #fffaf0;
+}
+
+.certification-notice strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.certification-notice p {
+  margin-bottom: 0;
+}
+
+.certification-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.certification-card {
+  padding: 20px;
+}
+
+.certification-card span {
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.role-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.role-compare > div {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.role-compare h4 {
+  margin: 0 0 8px;
+}
+
+.role-compare p,
+.certification-steps {
+  margin-bottom: 0;
+}
+
+.certification-steps {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.certification-steps li + li {
+  margin-top: 6px;
+}
+
+.certification-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.cert-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 .review-filter {
   display: flex;
   align-items: center;
@@ -769,7 +854,8 @@ progress::-webkit-progress-value {
   .status-grid,
   .exam-panel,
   .exam-exercise-card,
-  .review-card {
+  .review-card,
+  .role-compare {
     grid-template-columns: 1fr;
   }
 
