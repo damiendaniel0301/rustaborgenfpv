@@ -161,6 +161,7 @@ const views = {
   dashboard: document.querySelector("#dashboardView"),
   step1: document.querySelector("#step1View"),
   step2: document.querySelector("#step2View"),
+  certification: document.querySelector("#certificationView"),
   review: document.querySelector("#reviewView")
 };
 
@@ -365,6 +366,7 @@ function setView(viewName) {
     dashboard: "Oversikt",
     step1: "Steg 1: Liftoff",
     step2: "Steg 2: Tinywhoop",
+    certification: "Hvordan ta sertifisering?",
     review: "Vurdering"
   };
   document.querySelector("#viewTitle").textContent = titles[viewName];
