@@ -162,6 +162,7 @@ const views = {
   step1: document.querySelector("#step1View"),
   step2: document.querySelector("#step2View"),
   certification: document.querySelector("#certificationView"),
+  military: document.querySelector("#militaryView"),
   review: document.querySelector("#reviewView"),
   summary: document.querySelector("#summaryView")
 };
@@ -376,7 +377,8 @@ function setView(viewName) {
     dashboard: "Oversikt",
     step1: "Steg 1: Liftoff",
     step2: "Steg 2: Tinywhoop",
-    certification: "Hvordan ta sertifisering?",
+    certification: "Steg 3: Kurs og sertifisering",
+    military: "Steg 4: Militært typekurs",
     review: "Vurdering",
     summary: "Oppsummering"
   };
