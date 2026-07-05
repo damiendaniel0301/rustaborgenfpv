@@ -61,6 +61,7 @@
             </div>
           </div>
           <p id="loginMessage" class="login-message" aria-live="polite"></p>
+          <p id="syncStatus" class="sync-status" aria-live="polite">Lokal lagring</p>
         </section>
 
         <nav class="side-nav" aria-label="Hovedvalg">
@@ -320,6 +321,8 @@
       </main>
     </div>
 
-    <script src="app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script type="module" src="supabase-sync.js"></script>
   </body>
 </html>
