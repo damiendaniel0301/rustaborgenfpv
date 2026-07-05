@@ -13,6 +13,7 @@ const liftoffExamExercises = [
   }
 ];
 
+const instructorAccessCode = "rustaborgenfpv";
 const deleteStudentPassword = "rustaborgenfpv";
 
 function blankProgress() {
@@ -35,6 +36,7 @@ const defaultState = {
   user: { name: "Gjest", role: "student" },
   currentStudentId: "gjest",
   selectedStudentId: "gjest",
+  instructors: [],
   students: [{ id: "gjest", name: "Gjest", ...blankProgress() }],
   ...blankProgress()
 };
@@ -179,6 +181,7 @@ function normalizeState(savedState) {
   savedState.step1.exam = normalizeLiftoffExam(savedState.step1.exam);
   updateLiftoffExamStatus(savedState.step1.exam);
   savedState.students = normalizeStudents(savedState);
+  savedState.instructors = normalizeInstructors(savedState.instructors);
   savedState.currentStudentId = savedState.currentStudentId || studentIdFromName(savedState.user.name);
   savedState.selectedStudentId = savedState.selectedStudentId || savedState.currentStudentId;
   loadActiveStudentProgress(savedState);
@@ -215,6 +218,15 @@ function normalizeStudent(student) {
     name: student.name || "Gjest",
     ...progress
   };
+}
+
+function normalizeInstructors(instructors = []) {
+  return Array.isArray(instructors)
+    ? instructors.map((instructor) => ({
+        id: instructor.id || studentIdFromName(instructor.name),
+        name: instructor.name || "Instruktør"
+      }))
+    : [];
 }
 
 function studentIdFromName(name = "Gjest") {
@@ -260,6 +272,31 @@ function ensureStudent(name) {
   const student = { id, name, ...blankProgress() };
   state.students.push(student);
   return student;
+}
+
+function ensureInstructor(name) {
+  const id = studentIdFromName(name);
+  const existing = state.instructors.find((instructor) => instructor.id === id);
+  if (existing) {
+    existing.name = name;
+    return existing;
+  }
+
+  const instructor = { id, name };
+  state.instructors.push(instructor);
+  return instructor;
+}
+
+function existingUsers() {
+  return [
+    ...state.students.map((student) => ({ id: student.id, name: student.name, role: "student" })),
+    ...state.instructors.map((instructor) => ({ id: instructor.id, name: instructor.name, role: "instructor" }))
+  ];
+}
+
+function findExistingUser(value) {
+  const [role, id] = value.split(":");
+  return existingUsers().find((user) => user.role === role && user.id === id);
 }
 
 function normalizeLiftoffExam(exam = {}) {
@@ -553,6 +590,31 @@ function renderStudentTabs() {
   }
 }
 
+function renderLogin() {
+  const select = document.querySelector("#loginUserSelect");
+  const users = existingUsers();
+  const currentValue = `${state.user.role}:${state.user.role === "instructor" ? state.user.id || studentIdFromName(state.user.name) : state.currentStudentId}`;
+
+  select.innerHTML = users
+    .map((user) => `<option value="${user.role}:${user.id}">${user.name} - ${user.role === "instructor" ? "Instruktør" : "Elev"}</option>`)
+    .join("");
+
+  if (users.some((user) => `${user.role}:${user.id}` === currentValue)) {
+    select.value = currentValue;
+  } else {
+    select.value = "student:gjest";
+  }
+
+  updateInstructorCodeVisibility();
+}
+
+function updateInstructorCodeVisibility() {
+  const selectedUser = findExistingUser(document.querySelector("#loginUserSelect").value);
+  const createRole = activeRole;
+  document.querySelector("#loginInstructorCodeGroup").classList.toggle("hidden", selectedUser?.role !== "instructor");
+  document.querySelector("#createInstructorCodeGroup").classList.toggle("hidden", createRole !== "instructor");
+}
+
 function studentProgressPercent(student, stepKey) {
   const tasks = student[stepKey].tasks;
   const requiredIndexes = requiredLessonIndexes(stepKey);
@@ -570,12 +632,12 @@ function renderRole() {
 
 function render() {
   document.querySelector("#currentUser").textContent = state.user.name;
-  document.querySelector("#nameInput").value = state.user.name === "Gjest" ? "" : state.user.name;
   activeRole = state.user.role;
   document.querySelectorAll(".role-button").forEach((button) => {
     button.classList.toggle("active", button.dataset.role === activeRole);
   });
 
+  renderLogin();
   renderTaskList("step1", "#step1Tasks");
   renderTaskList("step2", "#step2Tasks");
   renderDashboard();
@@ -590,23 +652,91 @@ document.querySelectorAll(".role-button").forEach((button) => {
     activeRole = button.dataset.role;
     document.querySelectorAll(".role-button").forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
+    updateInstructorCodeVisibility();
   });
 });
 
 document.querySelector("#loginButton").addEventListener("click", () => {
-  const name = document.querySelector("#nameInput").value.trim() || "Gjest";
-  state.user = { name, role: activeRole };
-  if (activeRole === "student") {
-    const student = ensureStudent(name);
-    state.currentStudentId = student.id;
-    state.selectedStudentId = student.id;
+  const selectedUser = findExistingUser(document.querySelector("#loginUserSelect").value);
+  const message = document.querySelector("#loginMessage");
+  if (!selectedUser) {
+    message.textContent = "Velg en bruker først.";
+    return;
+  }
+
+  if (selectedUser.role === "instructor" && document.querySelector("#loginInstructorCode").value.trim() !== instructorAccessCode) {
+    message.textContent = "Feil instruktørkode.";
+    return;
+  }
+
+  state.user = { id: selectedUser.id, name: selectedUser.name, role: selectedUser.role };
+  if (selectedUser.role === "student") {
+    state.currentStudentId = selectedUser.id;
+    state.selectedStudentId = selectedUser.id;
   } else if (!state.students.some((student) => student.id === state.selectedStudentId)) {
     state.selectedStudentId = state.students[0].id;
   }
+  document.querySelector("#loginInstructorCode").value = "";
+  message.textContent = "";
   loadActiveStudentProgress();
   saveState();
   render();
-  if (activeRole === "instructor") setView("review");
+  if (selectedUser.role === "instructor") setView("review");
+});
+
+document.querySelector("#loginUserSelect").addEventListener("change", () => {
+  document.querySelector("#loginMessage").textContent = "";
+  updateInstructorCodeVisibility();
+});
+
+document.querySelector("#showCreateUserButton").addEventListener("click", () => {
+  document.querySelector("#createUserPanel").classList.remove("hidden");
+  document.querySelector("#loginMessage").textContent = "";
+  updateInstructorCodeVisibility();
+});
+
+document.querySelector("#cancelCreateUserButton").addEventListener("click", () => {
+  document.querySelector("#createUserPanel").classList.add("hidden");
+  document.querySelector("#nameInput").value = "";
+  document.querySelector("#createInstructorCode").value = "";
+  document.querySelector("#loginMessage").textContent = "";
+});
+
+document.querySelector("#createUserButton").addEventListener("click", () => {
+  const name = document.querySelector("#nameInput").value.trim();
+  const message = document.querySelector("#loginMessage");
+
+  if (!name) {
+    message.textContent = "Skriv navn på ny bruker først.";
+    return;
+  }
+
+  if (activeRole === "instructor" && document.querySelector("#createInstructorCode").value.trim() !== instructorAccessCode) {
+    message.textContent = "Feil instruktørkode. Instruktørbruker ble ikke opprettet.";
+    return;
+  }
+
+  if (activeRole === "student") {
+    const student = ensureStudent(name);
+    state.user = { id: student.id, name: student.name, role: "student" };
+    state.currentStudentId = student.id;
+    state.selectedStudentId = student.id;
+  } else {
+    const instructor = ensureInstructor(name);
+    state.user = { id: instructor.id, name: instructor.name, role: "instructor" };
+    if (!state.students.some((student) => student.id === state.selectedStudentId)) {
+      state.selectedStudentId = state.students[0].id;
+    }
+  }
+
+  document.querySelector("#createUserPanel").classList.add("hidden");
+  document.querySelector("#nameInput").value = "";
+  document.querySelector("#createInstructorCode").value = "";
+  message.textContent = "";
+  loadActiveStudentProgress();
+  saveState();
+  render();
+  if (state.user.role === "instructor") setView("review");
 });
 
 document.querySelectorAll(".nav-button").forEach((button) => {
