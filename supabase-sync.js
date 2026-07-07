@@ -209,7 +209,7 @@ async function signUp() {
   });
 
   if (error) {
-    setLoginMessage("Kunne ikke opprette bruker. E-post kan allerede være i bruk.");
+    setLoginMessage(`Kunne ikke opprette bruker: ${error.message}`);
     return;
   }
 
