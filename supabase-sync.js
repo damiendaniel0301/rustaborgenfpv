@@ -209,6 +209,10 @@ async function signUp() {
   });
 
   if (error) {
+    if ((error.message || "").toLowerCase().includes("rate limit")) {
+      setLoginMessage("Supabase har midlertidig stoppet nye registreringer fordi e-postgrensen er nådd. Vent litt, eller konfigurer egen SMTP i Supabase Auth.");
+      return;
+    }
     setLoginMessage(`Kunne ikke opprette bruker: ${error.message}`);
     return;
   }
