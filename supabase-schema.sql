@@ -84,7 +84,7 @@ create or replace function public.redeem_instructor_invite(invite_code text)
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   invite_id bigint;
