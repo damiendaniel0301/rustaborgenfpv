@@ -393,6 +393,28 @@ async function redeemInstructorInvite() {
   window.location.reload();
 }
 
+function enforceAuthRoleView(authState = window.DRONEFLYVER_AUTH_STATE) {
+  const user = authState?.user;
+  if (!user) return;
+
+  document.querySelector("#currentUser").textContent = user.name;
+  document.querySelector("#currentRole").textContent = user.role === "instructor" ? "Instruktør" : "Elev";
+  document.querySelectorAll(".instructor-only").forEach((item) => item.classList.toggle("hidden", user.role !== "instructor"));
+  document.querySelectorAll(".student-only").forEach((item) => item.classList.toggle("hidden", user.role === "instructor"));
+
+  if (user.role !== "instructor") return;
+
+  const reviewView = document.querySelector("#reviewView");
+  if (!reviewView) return;
+
+  document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active-view", view === reviewView));
+  document.querySelectorAll(".nav-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === "review");
+  });
+  const title = document.querySelector("#viewTitle");
+  if (title) title.textContent = "Vurdering";
+}
+
 async function bootAuthenticatedApp() {
   if (!client) {
     renderAuthForm();
@@ -426,8 +448,9 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=23");
+  await import("./app.js?v=24");
   window.droneflyverApplyAuthState?.(authState);
+  enforceAuthRoleView(authState);
   renderSecureAccountPanel();
   setStatus("Synkronisert");
 
