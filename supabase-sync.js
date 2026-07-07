@@ -416,12 +416,18 @@ async function bootAuthenticatedApp() {
 
   const remoteData = await fetchRemoteSharedData();
   const sharedData = ensureProfileInSharedData(remoteData || sharedDataFromState(readLocalState()));
+  const authState = {
+    user: appUserFromProfile(),
+    sharedData
+  };
+  window.DRONEFLYVER_AUTH_STATE = authState;
   applyAuthState(sharedData);
   lastRemoteSnapshot = snapshot(sharedData);
   installLocalStorageSync();
 
   showAppAfterSignedIn();
   await import("./app.js");
+  window.droneflyverApplyAuthState?.(authState);
   renderSecureAccountPanel();
   setStatus("Synkronisert");
 
