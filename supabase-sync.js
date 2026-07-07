@@ -426,7 +426,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js");
+  await import("./app.js?v=23");
   window.droneflyverApplyAuthState?.(authState);
   renderSecureAccountPanel();
   setStatus("Synkronisert");
