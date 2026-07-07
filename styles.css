@@ -158,6 +158,50 @@ button {
   font-weight: 700;
 }
 
+.sync-status {
+  min-height: 18px;
+  margin: 4px 0 0;
+  color: #b8c6da;
+  font-size: 12px;
+}
+
+.sync-status.sync-error {
+  color: #ffd9a1;
+  font-weight: 700;
+}
+
+.secure-hidden,
+.secure-auth-active #loginInstructorCodeGroup,
+.secure-auth-active #createInstructorCodeGroup,
+.secure-auth-active #createUserPanel {
+  display: none !important;
+}
+
+.secure-auth-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.secure-auth-panel strong,
+.secure-auth-panel small,
+.secure-auth-panel .secure-label {
+  display: block;
+}
+
+.secure-auth-panel small,
+.secure-auth-panel .secure-label {
+  color: #b8c6da;
+  font-size: 13px;
+}
+
+.instructor-upgrade {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
 .role-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
