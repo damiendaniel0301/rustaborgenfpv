@@ -32,6 +32,7 @@ function sharedDataFromState(state = {}) {
   return {
     students: Array.isArray(state.students) ? state.students : [],
     instructors: Array.isArray(state.instructors) ? state.instructors : [],
+    flightLogs: Array.isArray(state.flightLogs) ? state.flightLogs : [],
     deletedStudentIds: Array.isArray(state.deletedStudentIds) ? state.deletedStudentIds : []
   };
 }
@@ -64,6 +65,7 @@ function ensureProfileInSharedData(sharedData, profile = authProfile) {
   const next = {
     students: Array.isArray(sharedData?.students) ? [...sharedData.students] : [],
     instructors: Array.isArray(sharedData?.instructors) ? [...sharedData.instructors] : [],
+    flightLogs: Array.isArray(sharedData?.flightLogs) ? [...sharedData.flightLogs] : [],
     deletedStudentIds: Array.isArray(sharedData?.deletedStudentIds) ? [...sharedData.deletedStudentIds] : []
   };
   const appUser = appUserFromProfile(profile);
@@ -93,6 +95,7 @@ function mergeProfilesIntoSharedData(sharedData, profiles = []) {
   const next = {
     students: Array.isArray(sharedData?.students) ? [...sharedData.students] : [],
     instructors: Array.isArray(sharedData?.instructors) ? [...sharedData.instructors] : [],
+    flightLogs: Array.isArray(sharedData?.flightLogs) ? [...sharedData.flightLogs] : [],
     deletedStudentIds: Array.isArray(sharedData?.deletedStudentIds) ? [...sharedData.deletedStudentIds] : []
   };
 
@@ -135,6 +138,7 @@ function applyAuthState(sharedData = {}) {
     selectedStudentId,
     students: mergedShared.students,
     instructors: mergedShared.instructors,
+    flightLogs: mergedShared.flightLogs,
     deletedStudentIds: mergedShared.deletedStudentIds
   });
   lastKnownStudentIds = new Set(mergedShared.students.map((student) => student.id));
@@ -154,13 +158,13 @@ function setLoginMessage(message) {
 
 function hideAppUntilSignedIn() {
   document.querySelector("main")?.classList.add("hidden");
-  document.querySelector(".side-nav")?.classList.add("hidden");
+  document.querySelectorAll(".side-nav").forEach((nav) => nav.classList.add("hidden"));
   document.querySelector(".account-card")?.classList.add("hidden");
 }
 
 function showAppAfterSignedIn() {
   document.querySelector("main")?.classList.remove("hidden");
-  document.querySelector(".side-nav")?.classList.remove("hidden");
+  document.querySelectorAll(".side-nav").forEach((nav) => nav.classList.remove("hidden"));
   document.querySelector(".account-card")?.classList.remove("hidden");
 }
 
@@ -507,7 +511,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=32");
+  await import("./app.js?v=33");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();

@@ -35,8 +35,24 @@ const defaultState = {
   selectedStudentId: "gjest",
   instructors: [],
   students: [{ id: "gjest", name: "Gjest", ...blankProgress() }],
+  flightLogs: [],
   ...blankProgress()
 };
+
+const coreEventCodes = [
+  ["TO", "Takeoff"],
+  ["LDG", "Landing"],
+  ["LOS", "Loss of signal / svak link"],
+  ["GPS", "GPS-problem"],
+  ["BAT", "Lav batterispenning / battery warning"],
+  ["RTH", "Return-to-home aktivert"],
+  ["OBS", "Obstacle / hindring"],
+  ["WX", "Værpåvirkning"],
+  ["PAY", "Payload event"],
+  ["CAM", "Kamera/sensor-hendelse"],
+  ["ABT", "Abortert sortie"],
+  ["MNT", "Vedlikehold kreves"]
+];
 
 const lessons = {
   step1: [
@@ -160,7 +176,8 @@ const views = {
   step2: document.querySelector("#step2View"),
   certification: document.querySelector("#certificationView"),
   military: document.querySelector("#militaryView"),
-  review: document.querySelector("#reviewView")
+  review: document.querySelector("#reviewView"),
+  flightLog: document.querySelector("#flightLogView")
 };
 
 function loadState() {
@@ -181,6 +198,7 @@ function normalizeState(savedState) {
   updateLiftoffExamStatus(savedState.step1.exam);
   savedState.students = normalizeStudents(savedState);
   savedState.instructors = normalizeInstructors(savedState.instructors);
+  savedState.flightLogs = normalizeFlightLogs(savedState.flightLogs);
   savedState.currentStudentId = savedState.currentStudentId || studentIdFromName(savedState.user.name);
   savedState.selectedStudentId = savedState.selectedStudentId || savedState.currentStudentId;
   loadActiveStudentProgress(savedState);
@@ -193,6 +211,7 @@ function applySharedState(sharedData = {}) {
     students: sharedData.students
   });
   state.instructors = normalizeInstructors(sharedData.instructors);
+  state.flightLogs = normalizeFlightLogs(sharedData.flightLogs);
 
   if (!state.students.some((student) => student.id === state.currentStudentId)) {
     state.currentStudentId = "gjest";
@@ -244,6 +263,38 @@ function normalizeInstructors(instructors = []) {
         name: instructor.name || "Instruktør"
       }))
     : [];
+}
+
+function normalizeFlightLogs(logs = []) {
+  if (!Array.isArray(logs)) return [];
+
+  return logs
+    .filter((log) => log && typeof log === "object")
+    .map((log) => ({
+      id: log.id || crypto.randomUUID(),
+      ownerId: log.ownerId || "",
+      date: log.date || "",
+      sortieNo: log.sortieNo || "",
+      operatorPilot: log.operatorPilot || "",
+      droneAirframe: log.droneAirframe || "",
+      location: log.location || "",
+      missionType: log.missionType || "Trening",
+      takeoffTime: log.takeoffTime || "",
+      landingTime: log.landingTime || "",
+      flightTimeMinutes: Number(log.flightTimeMinutes) || 0,
+      cumulativeFlightHours: Number(log.cumulativeFlightHours) || 0,
+      batteryPackNo: log.batteryPackNo || "",
+      weather: log.weather || "",
+      flightMode: log.flightMode || "FPV",
+      coreEvents: Array.isArray(log.coreEvents) ? log.coreEvents.filter(Boolean) : [],
+      issuesIncidents: log.issuesIncidents || "",
+      maintenanceRequired: Boolean(log.maintenanceRequired),
+      maintenanceNotes: log.maintenanceNotes || "",
+      remarks: log.remarks || "",
+      createdAt: log.createdAt || new Date().toISOString(),
+      updatedAt: log.updatedAt || new Date().toISOString()
+    }))
+    .sort((a, b) => `${b.date} ${b.takeoffTime}`.localeCompare(`${a.date} ${a.takeoffTime}`));
 }
 
 function studentIdFromName(name = "Gjest") {
@@ -355,7 +406,8 @@ function setView(viewName) {
     step2: "Steg 2: Tinywhoop",
     certification: "Steg 3: Kurs og sertifisering",
     military: "Steg 4: Militært typekurs",
-    review: "Vurdering"
+    review: "Vurdering",
+    flightLog: "Fly log"
   };
   document.querySelector("#viewTitle").textContent = titles[viewName];
 }
@@ -499,6 +551,178 @@ function safeUrl(value = "") {
   }
 }
 
+function todayString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dateCompact(date = todayString()) {
+  return date.replaceAll("-", "");
+}
+
+function flightLogsForActiveStudent() {
+  const ownerId = activeStudentId();
+  return state.flightLogs.filter((log) => log.ownerId === ownerId);
+}
+
+function generateSortieNumber(date = todayString()) {
+  const compact = dateCompact(date);
+  const sameDayCount = flightLogsForActiveStudent().filter((log) => log.date === date).length + 1;
+  return `${compact}-${String(sameDayCount).padStart(3, "0")}`;
+}
+
+function minutesBetween(start, end) {
+  if (!start || !end) return 0;
+  const [startHours, startMinutes] = start.split(":").map(Number);
+  const [endHours, endMinutes] = end.split(":").map(Number);
+  if ([startHours, startMinutes, endHours, endMinutes].some(Number.isNaN)) return 0;
+  let minutes = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
+  if (minutes < 0) minutes += 24 * 60;
+  return minutes;
+}
+
+function renderCoreEventOptions() {
+  const options = document.querySelector("#coreEventOptions");
+  const legend = document.querySelector("#coreEventLegend");
+  if (!options || !legend) return;
+
+  options.innerHTML = coreEventCodes
+    .map(([code, label]) => `
+      <label class="core-event-option">
+        <input type="checkbox" value="${code}" />
+        <span>${code}</span>
+      </label>
+    `)
+    .join("");
+
+  legend.innerHTML = coreEventCodes
+    .map(([code, label]) => `
+      <div class="core-event-row">
+        <strong>${code}</strong>
+        <span>${label}</span>
+      </div>
+    `)
+    .join("");
+}
+
+function resetFlightLogForm() {
+  const form = document.querySelector("#flightLogForm");
+  if (!form) return;
+
+  form.reset();
+  const date = todayString();
+  document.querySelector("#flightLogId").value = "";
+  document.querySelector("#flightDate").value = date;
+  document.querySelector("#sortieNo").value = generateSortieNumber(date);
+  document.querySelector("#operatorPilot").value = state.user.name === "Gjest" ? "" : state.user.name;
+}
+
+function flightLogFromForm() {
+  const id = document.querySelector("#flightLogId").value || crypto.randomUUID();
+  const now = new Date().toISOString();
+  const existing = state.flightLogs.find((log) => log.id === id);
+
+  return {
+    id,
+    ownerId: activeStudentId(),
+    date: document.querySelector("#flightDate").value,
+    sortieNo: document.querySelector("#sortieNo").value.trim(),
+    operatorPilot: document.querySelector("#operatorPilot").value.trim(),
+    droneAirframe: document.querySelector("#droneAirframe").value.trim(),
+    location: document.querySelector("#flightLocation").value.trim(),
+    missionType: document.querySelector("#missionType").value,
+    takeoffTime: document.querySelector("#takeoffTime").value,
+    landingTime: document.querySelector("#landingTime").value,
+    flightTimeMinutes: Number(document.querySelector("#flightTimeMinutes").value) || 0,
+    cumulativeFlightHours: Number(document.querySelector("#cumulativeFlightHours").value) || 0,
+    batteryPackNo: document.querySelector("#batteryPackNo").value.trim(),
+    weather: document.querySelector("#weather").value.trim(),
+    flightMode: document.querySelector("#flightMode").value,
+    coreEvents: [...document.querySelectorAll("#coreEventOptions input:checked")].map((input) => input.value),
+    issuesIncidents: document.querySelector("#issuesIncidents").value.trim(),
+    maintenanceRequired: document.querySelector("#maintenanceRequired").checked,
+    maintenanceNotes: document.querySelector("#maintenanceNotes").value.trim(),
+    remarks: document.querySelector("#flightRemarks").value.trim(),
+    createdAt: existing?.createdAt || now,
+    updatedAt: now
+  };
+}
+
+function populateFlightLogForm(log) {
+  setView("flightLog");
+  document.querySelector("#flightLogId").value = log.id;
+  document.querySelector("#flightDate").value = log.date;
+  document.querySelector("#sortieNo").value = log.sortieNo;
+  document.querySelector("#operatorPilot").value = log.operatorPilot;
+  document.querySelector("#droneAirframe").value = log.droneAirframe;
+  document.querySelector("#flightLocation").value = log.location;
+  document.querySelector("#missionType").value = log.missionType;
+  document.querySelector("#takeoffTime").value = log.takeoffTime;
+  document.querySelector("#landingTime").value = log.landingTime;
+  document.querySelector("#flightTimeMinutes").value = log.flightTimeMinutes || "";
+  document.querySelector("#cumulativeFlightHours").value = log.cumulativeFlightHours || "";
+  document.querySelector("#batteryPackNo").value = log.batteryPackNo;
+  document.querySelector("#weather").value = log.weather;
+  document.querySelector("#flightMode").value = log.flightMode;
+  document.querySelectorAll("#coreEventOptions input").forEach((input) => {
+    input.checked = log.coreEvents.includes(input.value);
+  });
+  document.querySelector("#issuesIncidents").value = log.issuesIncidents;
+  document.querySelector("#maintenanceRequired").checked = log.maintenanceRequired;
+  document.querySelector("#maintenanceNotes").value = log.maintenanceNotes;
+  document.querySelector("#flightRemarks").value = log.remarks;
+}
+
+function renderFlightLog() {
+  renderCoreEventOptions();
+  const logs = flightLogsForActiveStudent();
+  const list = document.querySelector("#flightLogList");
+  const count = document.querySelector("#flightLogCount");
+  if (!list || !count) return;
+
+  count.textContent = `${logs.length} ${logs.length === 1 ? "flyvning" : "flyvninger"}`;
+
+  if (!document.querySelector("#flightDate").value) {
+    resetFlightLogForm();
+  }
+
+  if (!logs.length) {
+    list.innerHTML = `<article class="empty-log-card">Ingen flyvninger loggført for valgt bruker ennå.</article>`;
+    return;
+  }
+
+  list.innerHTML = logs
+    .map((log) => `
+      <article class="flight-log-card">
+        <div class="flight-log-main">
+          <span class="task-meta">${escapeHtml(log.date)} · ${escapeHtml(log.flightMode)}</span>
+          <h3>${escapeHtml(log.sortieNo || "Uten sortie no.")}</h3>
+          <p>${escapeHtml(log.operatorPilot || "Ukjent pilot")} · ${escapeHtml(log.droneAirframe || "Ukjent drone")}</p>
+          <p>${escapeHtml(log.location || "Ukjent sted")} · ${escapeHtml(log.missionType)}</p>
+        </div>
+        <div class="flight-log-details">
+          <span>${escapeHtml(log.takeoffTime || "--:--")} - ${escapeHtml(log.landingTime || "--:--")}</span>
+          <strong>${log.flightTimeMinutes || 0} min</strong>
+          <span>Total: ${log.cumulativeFlightHours || 0} t</span>
+          <span>Batteri: ${escapeHtml(log.batteryPackNo || "-")}</span>
+          <span>Vær: ${escapeHtml(log.weather || "-")}</span>
+        </div>
+        <div class="core-event-tags">
+          ${log.coreEvents.length ? log.coreEvents.map((code) => `<span>${escapeHtml(code)}</span>`).join("") : "<span>Ingen core events</span>"}
+          ${log.maintenanceRequired ? `<span class="maintenance-flag">MNT</span>` : ""}
+        </div>
+        ${(log.issuesIncidents || log.maintenanceNotes || log.remarks) ? `
+          <div class="flight-log-notes">
+            ${log.issuesIncidents ? `<p><strong>Issues:</strong> ${escapeHtml(log.issuesIncidents)}</p>` : ""}
+            ${log.maintenanceNotes ? `<p><strong>Maintenance:</strong> ${escapeHtml(log.maintenanceNotes)}</p>` : ""}
+            ${log.remarks ? `<p><strong>Remarks:</strong> ${escapeHtml(log.remarks)}</p>` : ""}
+          </div>
+        ` : ""}
+        <button class="secondary-button" type="button" data-edit-flight-log="${log.id}">Rediger</button>
+      </article>
+    `)
+    .join("");
+}
+
 function renderReview() {
   const list = document.querySelector("#reviewList");
   const cards = [];
@@ -633,6 +857,7 @@ function render() {
   renderExams();
   renderReview();
   renderStudentTabs();
+  renderFlightLog();
   renderRole();
 }
 
@@ -704,6 +929,43 @@ document.querySelector("#continueButton").addEventListener("click", () => {
   else setView("step2");
 });
 
+document.querySelector("#flightLogForm")?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const log = flightLogFromForm();
+  if (!log.sortieNo) {
+    log.sortieNo = generateSortieNumber(log.date || todayString());
+  }
+
+  const index = state.flightLogs.findIndex((item) => item.id === log.id);
+  if (index >= 0) state.flightLogs[index] = log;
+  else state.flightLogs.push(log);
+  state.flightLogs = normalizeFlightLogs(state.flightLogs);
+  saveState();
+  render();
+  resetFlightLogForm();
+});
+
+document.querySelector("#clearFlightLogForm")?.addEventListener("click", resetFlightLogForm);
+
+document.querySelector("#flightDate")?.addEventListener("change", (event) => {
+  const sortie = document.querySelector("#sortieNo");
+  if (sortie && !document.querySelector("#flightLogId").value) {
+    sortie.value = generateSortieNumber(event.target.value || todayString());
+  }
+});
+
+["#takeoffTime", "#landingTime"].forEach((selector) => {
+  document.querySelector(selector)?.addEventListener("change", () => {
+    const minutes = minutesBetween(
+      document.querySelector("#takeoffTime").value,
+      document.querySelector("#landingTime").value
+    );
+    if (minutes > 0) {
+      document.querySelector("#flightTimeMinutes").value = minutes;
+    }
+  });
+});
+
 document.body.addEventListener("click", (event) => {
   const check = event.target.closest(".check-button");
   const videoButton = event.target.closest("[data-video]");
@@ -716,11 +978,19 @@ document.body.addEventListener("click", (event) => {
   const clearExercise = event.target.closest("[data-clear-exercise]");
   const clearButton = event.target.closest("[data-clear]");
   const selectStudent = event.target.closest("[data-select-student]");
+  const editFlightLog = event.target.closest("[data-edit-flight-log]");
+
+  if (editFlightLog) {
+    const log = state.flightLogs.find((item) => item.id === editFlightLog.dataset.editFlightLog);
+    if (log) populateFlightLogForm(log);
+    return;
+  }
 
   if (selectStudent) {
     saveState();
     state.selectedStudentId = selectStudent.dataset.selectStudent;
     loadActiveStudentProgress();
+    resetFlightLogForm();
     saveState();
     render();
     setView("review");

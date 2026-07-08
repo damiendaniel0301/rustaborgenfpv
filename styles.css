@@ -25,7 +25,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -205,6 +207,10 @@ button {
   gap: 8px;
 }
 
+.bottom-nav {
+  margin-top: auto;
+}
+
 .nav-button {
   width: 100%;
   padding: 0 14px;
@@ -223,7 +229,7 @@ button {
 }
 
 .account-card {
-  margin-top: auto;
+  margin-top: 0;
 }
 
 .creator-credit {
@@ -854,6 +860,204 @@ progress::-webkit-progress-value {
   font-size: 13px;
 }
 
+.flight-log-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+
+.flight-log-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.form-row {
+  display: grid;
+  gap: 7px;
+}
+
+.form-row.wide,
+.core-event-fieldset,
+.flight-log-actions {
+  grid-column: 1 / -1;
+}
+
+.form-row label,
+.core-event-fieldset legend {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: #fff;
+}
+
+.form-row textarea {
+  resize: vertical;
+}
+
+.maintenance-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.maintenance-row input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+}
+
+.core-event-fieldset {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.core-event-options,
+.core-event-tags,
+.flight-log-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.core-event-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fbff;
+  font-weight: 800;
+}
+
+.core-event-option input {
+  width: 16px;
+  min-height: 16px;
+}
+
+.core-event-card,
+.empty-log-card,
+.flight-log-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.core-event-card {
+  padding: 18px;
+}
+
+.core-event-legend {
+  display: grid;
+  gap: 8px;
+}
+
+.core-event-row {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.core-event-row strong {
+  color: var(--blue);
+}
+
+.flight-log-table-wrap {
+  margin-top: 22px;
+}
+
+.compact-heading {
+  margin-bottom: 12px;
+}
+
+.flight-log-list {
+  display: grid;
+  gap: 12px;
+}
+
+.flight-log-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+}
+
+.flight-log-main h3,
+.flight-log-main p {
+  margin-bottom: 4px;
+}
+
+.flight-log-details {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.flight-log-details strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.core-event-tags span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 6px;
+  color: #153a29;
+  background: #dff5ea;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.core-event-tags .maintenance-flag {
+  color: #5a3808;
+  background: #ffe7bd;
+}
+
+.flight-log-notes {
+  grid-column: 1 / -1;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.flight-log-notes p {
+  margin-bottom: 6px;
+}
+
+.empty-log-card {
+  padding: 18px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .danger-button {
   min-height: 44px;
   padding: 0 14px;
@@ -885,7 +1089,9 @@ progress::-webkit-progress-value {
   .exam-panel,
   .exam-exercise-card,
   .review-card,
-  .role-compare {
+  .role-compare,
+  .flight-log-layout,
+  .flight-log-card {
     grid-template-columns: 1fr;
   }
 
@@ -928,6 +1134,10 @@ progress::-webkit-progress-value {
   .review-filter select {
     min-width: 0;
     width: 100%;
+  }
+
+  .flight-log-form {
+    grid-template-columns: 1fr;
   }
 
   h1 {

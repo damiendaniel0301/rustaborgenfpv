@@ -49,6 +49,10 @@
           <button class="nav-button instructor-only" type="button" data-view="review">Vurdering</button>
         </nav>
 
+        <nav class="side-nav bottom-nav" aria-label="Operativ logg">
+          <button class="nav-button" type="button" data-view="flightLog">Fly log</button>
+        </nav>
+
         <div class="account-card">
           <span>Innlogget som</span>
           <strong id="currentUser">Gjest</strong>
@@ -292,11 +296,134 @@
           <div id="reviewList" class="review-list"></div>
         </section>
 
+        <section id="flightLogView" class="view">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Operativ logg</p>
+              <h2>Fly log</h2>
+              <p class="review-help">Før sortie-nummer, flytid, pilot, drone, sted, core events og merknader etter hver flyvning.</p>
+            </div>
+          </div>
+
+          <div class="flight-log-layout">
+            <form id="flightLogForm" class="flight-log-form">
+              <input id="flightLogId" type="hidden" />
+
+              <div class="form-row">
+                <label for="flightDate">Date</label>
+                <input id="flightDate" type="date" required />
+              </div>
+              <div class="form-row">
+                <label for="sortieNo">Sortie No.</label>
+                <input id="sortieNo" placeholder="20260708-001" />
+              </div>
+              <div class="form-row">
+                <label for="operatorPilot">Operator / Pilot</label>
+                <input id="operatorPilot" placeholder="Navn" />
+              </div>
+              <div class="form-row">
+                <label for="droneAirframe">Drone / Airframe</label>
+                <input id="droneAirframe" placeholder="Modell og serienummer" />
+              </div>
+              <div class="form-row">
+                <label for="flightLocation">Location</label>
+                <input id="flightLocation" placeholder="Sted / koordinater" />
+              </div>
+              <div class="form-row">
+                <label for="missionType">Mission type</label>
+                <select id="missionType">
+                  <option>Trening</option>
+                  <option>Inspeksjon</option>
+                  <option>Foto</option>
+                  <option>Søk</option>
+                  <option>Testflyging</option>
+                  <option>Operativ sortie</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label for="takeoffTime">Takeoff time</label>
+                <input id="takeoffTime" type="time" />
+              </div>
+              <div class="form-row">
+                <label for="landingTime">Landing time</label>
+                <input id="landingTime" type="time" />
+              </div>
+              <div class="form-row">
+                <label for="flightTimeMinutes">Flight time</label>
+                <input id="flightTimeMinutes" type="number" min="0" step="0.1" placeholder="Minutter" />
+              </div>
+              <div class="form-row">
+                <label for="cumulativeFlightHours">Cumulative flight hours</label>
+                <input id="cumulativeFlightHours" type="number" min="0" step="0.01" placeholder="Timer totalt" />
+              </div>
+              <div class="form-row">
+                <label for="batteryPackNo">Battery / pack no.</label>
+                <input id="batteryPackNo" placeholder="BAT-01" />
+              </div>
+              <div class="form-row">
+                <label for="weather">Weather</label>
+                <input id="weather" placeholder="Vind, sikt, nedbør" />
+              </div>
+              <div class="form-row">
+                <label for="flightMode">Flight mode</label>
+                <select id="flightMode">
+                  <option>VLOS</option>
+                  <option>EVLOS</option>
+                  <option>BVLOS</option>
+                  <option>FPV</option>
+                  <option>Autonomous</option>
+                </select>
+              </div>
+
+              <fieldset class="core-event-fieldset">
+                <legend>Core events</legend>
+                <div id="coreEventOptions" class="core-event-options"></div>
+              </fieldset>
+
+              <div class="form-row wide">
+                <label for="issuesIncidents">Issues / incidents</label>
+                <textarea id="issuesIncidents" rows="3" placeholder="Feil, nestenulykker, tap av signal, nødlanding osv."></textarea>
+              </div>
+              <div class="form-row wide maintenance-row">
+                <label>
+                  <input id="maintenanceRequired" type="checkbox" />
+                  Maintenance required
+                </label>
+                <input id="maintenanceNotes" placeholder="Hva må vedlikeholdes?" />
+              </div>
+              <div class="form-row wide">
+                <label for="flightRemarks">Remarks</label>
+                <textarea id="flightRemarks" rows="4" placeholder="Fritekst"></textarea>
+              </div>
+
+              <div class="flight-log-actions">
+                <button class="primary-button" type="submit">Lagre flyging</button>
+                <button id="clearFlightLogForm" class="secondary-button" type="button">Tøm skjema</button>
+              </div>
+            </form>
+
+            <aside class="core-event-card">
+              <h3>Core event-koder</h3>
+              <div id="coreEventLegend" class="core-event-legend"></div>
+            </aside>
+          </div>
+
+          <div class="flight-log-table-wrap">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="eyebrow">Loggførte sorties</p>
+                <h3 id="flightLogCount">0 flyvninger</h3>
+              </div>
+            </div>
+            <div id="flightLogList" class="flight-log-list"></div>
+          </div>
+        </section>
+
       </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=32"></script>
+    <script type="module" src="supabase-sync.js?v=33"></script>
   </body>
 </html>
