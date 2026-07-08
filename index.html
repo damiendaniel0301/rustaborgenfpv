@@ -36,32 +36,8 @@
 
         <section class="login-panel" aria-labelledby="login-title">
           <h2 id="login-title">Innlogging</h2>
-          <label for="loginUserSelect">Eksisterende bruker</label>
-          <select id="loginUserSelect"></select>
-          <div id="loginInstructorCodeGroup" class="code-field hidden">
-            <label for="loginInstructorCode">Instruktørkode</label>
-            <input id="loginInstructorCode" type="password" autocomplete="off" placeholder="Skriv instruktørkode" />
-          </div>
-          <button id="loginButton" class="primary-button" type="button">Logg inn</button>
-          <button id="showCreateUserButton" class="secondary-button full-button" type="button">Lag ny bruker</button>
-          <div id="createUserPanel" class="create-user-panel hidden">
-            <label for="nameInput">Navn på ny bruker</label>
-            <input id="nameInput" autocomplete="name" placeholder="Skriv navnet" />
-            <div class="role-tabs" role="group" aria-label="Velg tilgang">
-              <button class="role-button active" type="button" data-role="student">Elev</button>
-              <button class="role-button" type="button" data-role="instructor">Instruktør</button>
-            </div>
-            <div id="createInstructorCodeGroup" class="code-field hidden">
-              <label for="createInstructorCode">Instruktørkode</label>
-              <input id="createInstructorCode" type="password" autocomplete="off" placeholder="Skriv instruktørkode" />
-            </div>
-            <div class="create-user-actions">
-              <button id="createUserButton" class="primary-button" type="button">Opprett bruker</button>
-              <button id="cancelCreateUserButton" class="secondary-button" type="button">Avbryt</button>
-            </div>
-          </div>
           <p id="loginMessage" class="login-message" aria-live="polite"></p>
-          <p id="syncStatus" class="sync-status" aria-live="polite">Lokal lagring</p>
+          <p id="syncStatus" class="sync-status" aria-live="polite">Sikker innlogging</p>
         </section>
 
         <nav class="side-nav" aria-label="Hovedvalg">
@@ -103,11 +79,9 @@
           </div>
           <div id="studentTabList" class="student-tab-list"></div>
           <div class="delete-student-panel">
-            <label for="deleteStudentPassword">Slett valgt elev</label>
-            <div class="delete-student-controls">
-              <input id="deleteStudentPassword" type="password" autocomplete="off" placeholder="Passord for sletting" />
-              <button id="deleteStudentButton" class="danger-button" type="button">Slett bruker</button>
-            </div>
+            <span>Deaktiver valgt elev</span>
+            <small>Eleven skjules fra instruktørlisten. Supabase-kontoen slettes ikke.</small>
+            <button id="deleteStudentButton" class="danger-button" type="button">Deaktiver elev</button>
             <p id="deleteStudentMessage" class="delete-student-message" aria-live="polite"></p>
           </div>
         </section>

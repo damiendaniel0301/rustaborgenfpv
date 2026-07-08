@@ -13,9 +13,6 @@ const liftoffExamExercises = [
   }
 ];
 
-const instructorAccessCode = "rustaborgenfpv";
-const deleteStudentPassword = "rustaborgenfpv";
-
 function blankProgress() {
   return {
     step1: {
@@ -190,6 +187,24 @@ function normalizeState(savedState) {
   return savedState;
 }
 
+function applySharedState(sharedData = {}) {
+  state.students = normalizeStudents({
+    ...state,
+    students: sharedData.students
+  });
+  state.instructors = normalizeInstructors(sharedData.instructors);
+
+  if (!state.students.some((student) => student.id === state.currentStudentId)) {
+    state.currentStudentId = "gjest";
+  }
+
+  if (!state.students.some((student) => student.id === state.selectedStudentId)) {
+    state.selectedStudentId = state.currentStudentId || "gjest";
+  }
+
+  loadActiveStudentProgress();
+}
+
 function normalizeTasks(tasks, length) {
   return Array.from({ length }, (_, index) => Boolean(tasks[index]));
 }
@@ -261,44 +276,6 @@ function syncActiveStudentProgress() {
     step1: structuredClone(state.step1),
     step2: structuredClone(state.step2)
   };
-}
-
-function ensureStudent(name) {
-  const id = studentIdFromName(name);
-  const existing = state.students.find((student) => student.id === id);
-  if (existing) {
-    existing.name = name;
-    return existing;
-  }
-
-  const student = { id, name, ...blankProgress() };
-  state.students.push(student);
-  return student;
-}
-
-function ensureInstructor(name) {
-  const id = studentIdFromName(name);
-  const existing = state.instructors.find((instructor) => instructor.id === id);
-  if (existing) {
-    existing.name = name;
-    return existing;
-  }
-
-  const instructor = { id, name };
-  state.instructors.push(instructor);
-  return instructor;
-}
-
-function existingUsers() {
-  return [
-    ...state.students.map((student) => ({ id: student.id, name: student.name, role: "student" })),
-    ...state.instructors.map((instructor) => ({ id: instructor.id, name: instructor.name, role: "instructor" }))
-  ];
-}
-
-function findExistingUser(value) {
-  const [role, id] = value.split(":");
-  return existingUsers().find((user) => user.role === role && user.id === id);
 }
 
 function normalizeLiftoffExam(exam = {}) {
@@ -620,35 +597,14 @@ function renderStudentTabs() {
   }
 
   if (deleteMessage && selectedStudent?.id === "gjest") {
-    deleteMessage.textContent = "Standardbrukeren Gjest kan ikke slettes.";
+    deleteMessage.textContent = "Standardbrukeren Gjest kan ikke deaktiveres.";
   } else if (deleteMessage && !deleteMessage.dataset.locked) {
     deleteMessage.textContent = "";
   }
 }
 
 function renderLogin() {
-  const select = document.querySelector("#loginUserSelect");
-  const users = existingUsers();
-  const currentValue = `${state.user.role}:${state.user.role === "instructor" ? state.user.id || studentIdFromName(state.user.name) : state.currentStudentId}`;
-
-  select.innerHTML = users
-    .map((user) => `<option value="${user.role}:${user.id}">${user.name} - ${user.role === "instructor" ? "Instruktør" : "Elev"}</option>`)
-    .join("");
-
-  if (users.some((user) => `${user.role}:${user.id}` === currentValue)) {
-    select.value = currentValue;
-  } else {
-    select.value = "student:gjest";
-  }
-
-  updateInstructorCodeVisibility();
-}
-
-function updateInstructorCodeVisibility() {
-  const selectedUser = findExistingUser(document.querySelector("#loginUserSelect").value);
-  const createRole = activeRole;
-  document.querySelector("#loginInstructorCodeGroup").classList.toggle("hidden", selectedUser?.role !== "instructor");
-  document.querySelector("#createInstructorCodeGroup").classList.toggle("hidden", createRole !== "instructor");
+  // Supabase renders and owns the login panel in supabase-sync.js.
 }
 
 function studentProgressPercent(student, stepKey) {
@@ -669,9 +625,6 @@ function renderRole() {
 function render() {
   document.querySelector("#currentUser").textContent = state.user.name;
   activeRole = state.user.role;
-  document.querySelectorAll(".role-button").forEach((button) => {
-    button.classList.toggle("active", button.dataset.role === activeRole);
-  });
 
   renderLogin();
   renderTaskList("step1", "#step1Tasks");
@@ -683,97 +636,33 @@ function render() {
   renderRole();
 }
 
-document.querySelectorAll(".role-button").forEach((button) => {
-  button.addEventListener("click", () => {
-    activeRole = button.dataset.role;
-    document.querySelectorAll(".role-button").forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
-    updateInstructorCodeVisibility();
-  });
-});
+window.droneflyverApplyAuthState = (authState = window.DRONEFLYVER_AUTH_STATE) => {
+  if (!authState?.user) return;
 
-document.querySelector("#loginButton").addEventListener("click", () => {
-  const selectedUser = findExistingUser(document.querySelector("#loginUserSelect").value);
-  const message = document.querySelector("#loginMessage");
-  if (!selectedUser) {
-    message.textContent = "Velg en bruker først.";
-    return;
+  state.user = {
+    id: authState.user.id,
+    name: authState.user.name,
+    role: authState.user.role
+  };
+
+  if (authState.sharedData) {
+    applySharedState(authState.sharedData);
   }
 
-  if (selectedUser.role === "instructor" && document.querySelector("#loginInstructorCode").value.trim() !== instructorAccessCode) {
-    message.textContent = "Feil instruktørkode.";
-    return;
-  }
-
-  state.user = { id: selectedUser.id, name: selectedUser.name, role: selectedUser.role };
-  if (selectedUser.role === "student") {
-    state.currentStudentId = selectedUser.id;
-    state.selectedStudentId = selectedUser.id;
-  } else if (!state.students.some((student) => student.id === state.selectedStudentId)) {
-    state.selectedStudentId = state.students[0].id;
-  }
-  document.querySelector("#loginInstructorCode").value = "";
-  message.textContent = "";
-  loadActiveStudentProgress();
-  saveState();
-  render();
-  if (selectedUser.role === "instructor") setView("review");
-});
-
-document.querySelector("#loginUserSelect").addEventListener("change", () => {
-  document.querySelector("#loginMessage").textContent = "";
-  updateInstructorCodeVisibility();
-});
-
-document.querySelector("#showCreateUserButton").addEventListener("click", () => {
-  document.querySelector("#createUserPanel").classList.remove("hidden");
-  document.querySelector("#loginMessage").textContent = "";
-  updateInstructorCodeVisibility();
-});
-
-document.querySelector("#cancelCreateUserButton").addEventListener("click", () => {
-  document.querySelector("#createUserPanel").classList.add("hidden");
-  document.querySelector("#nameInput").value = "";
-  document.querySelector("#createInstructorCode").value = "";
-  document.querySelector("#loginMessage").textContent = "";
-});
-
-document.querySelector("#createUserButton").addEventListener("click", () => {
-  const name = document.querySelector("#nameInput").value.trim();
-  const message = document.querySelector("#loginMessage");
-
-  if (!name) {
-    message.textContent = "Skriv navn på ny bruker først.";
-    return;
-  }
-
-  if (activeRole === "instructor" && document.querySelector("#createInstructorCode").value.trim() !== instructorAccessCode) {
-    message.textContent = "Feil instruktørkode. Instruktørbruker ble ikke opprettet.";
-    return;
-  }
-
-  if (activeRole === "student") {
-    const student = ensureStudent(name);
-    state.user = { id: student.id, name: student.name, role: "student" };
-    state.currentStudentId = student.id;
-    state.selectedStudentId = student.id;
+  if (state.user.role === "student") {
+    state.currentStudentId = state.user.id;
+    state.selectedStudentId = state.user.id;
   } else {
-    const instructor = ensureInstructor(name);
-    state.user = { id: instructor.id, name: instructor.name, role: "instructor" };
     if (!state.students.some((student) => student.id === state.selectedStudentId)) {
-      state.selectedStudentId = state.students[0].id;
+      state.selectedStudentId = state.students[0]?.id || "gjest";
     }
   }
 
-  document.querySelector("#createUserPanel").classList.add("hidden");
-  document.querySelector("#nameInput").value = "";
-  document.querySelector("#createInstructorCode").value = "";
-  message.textContent = "";
   loadActiveStudentProgress();
   saveState();
   render();
   if (state.user.role === "instructor") setView("review");
-});
+};
 
 document.querySelectorAll(".nav-button").forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
@@ -784,23 +673,19 @@ document.querySelector("#reviewStepSelect").addEventListener("change", (event) =
   renderReview();
 });
 
-document.querySelector("#deleteStudentButton").addEventListener("click", () => {
+document.querySelector("#deleteStudentButton")?.addEventListener("click", () => {
   const selectedStudent = activeStudent();
-  const passwordInput = document.querySelector("#deleteStudentPassword");
   const message = document.querySelector("#deleteStudentMessage");
-  const password = passwordInput.value.trim();
 
   message.dataset.locked = "true";
 
   if (!selectedStudent || selectedStudent.id === "gjest") {
-    message.textContent = "Standardbrukeren Gjest kan ikke slettes.";
+    message.textContent = "Standardbrukeren Gjest kan ikke deaktiveres.";
     return;
   }
 
-  if (password !== deleteStudentPassword) {
-    message.textContent = "Feil passord. Brukeren ble ikke slettet.";
-    return;
-  }
+  const confirmed = window.confirm(`Deaktiver ${selectedStudent.name}? Eleven skjules fra instruktørlisten, men Supabase-kontoen slettes ikke.`);
+  if (!confirmed) return;
 
   state.students = state.students.filter((student) => student.id !== selectedStudent.id);
   const nextStudent = state.students.find((student) => student.id !== "gjest") || state.students[0];
@@ -809,8 +694,7 @@ document.querySelector("#deleteStudentButton").addEventListener("click", () => {
     state.currentStudentId = state.selectedStudentId;
   }
   loadActiveStudentProgress();
-  passwordInput.value = "";
-  message.textContent = `Brukeren ${selectedStudent.name} er slettet.`;
+  message.textContent = `${selectedStudent.name} er deaktivert og skjult fra elevlisten.`;
   saveState();
   render();
 });

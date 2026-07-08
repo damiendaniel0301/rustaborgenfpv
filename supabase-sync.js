@@ -1,5 +1,4 @@
-const STORAGE_KEY = "droneflyt-state";
-const TABLE_NAME = "drone_app_state";
+﻿const STORAGE_KEY = "droneflyt-state";
 const config = window.DRONEFLYVER_SUPABASE || {};
 const configured = Boolean(
   window.supabase &&
@@ -169,15 +168,6 @@ function hideLegacyLoginControls() {
   const panel = document.querySelector(".login-panel");
   if (!panel) return;
   panel.classList.add("secure-auth-active");
-  [
-    "#loginUserSelect",
-    "#loginInstructorCodeGroup",
-    "#loginButton",
-    "#showCreateUserButton",
-    "#createUserPanel",
-    "#loginMessage"
-  ].forEach((selector) => document.querySelector(selector)?.classList.add("secure-hidden"));
-  document.querySelector("label[for='loginUserSelect']")?.classList.add("secure-hidden");
 }
 
 function renderAuthForm() {
@@ -313,18 +303,16 @@ async function fetchProfilesForRoster() {
   return Array.isArray(data) ? data : [];
 }
 async function fetchRemoteSharedData() {
-  const { data, error } = await client
-    .from(TABLE_NAME)
-    .select("data")
-    .eq("id", stateId)
-    .maybeSingle();
+  const { data, error } = await client.rpc("get_drone_app_state", {
+    state_id: stateId
+  });
 
   if (error) {
     setStatus("Supabase-feil", true);
     return null;
   }
 
-  return data?.data || null;
+  return data || null;
 }
 
 async function pushSharedData(rawState) {
@@ -342,6 +330,7 @@ async function pushSharedData(rawState) {
     const deletedIds = new Set(Array.isArray(parsed.deletedStudentIds) ? parsed.deletedStudentIds : []);
     lastKnownStudentIds.forEach((studentId) => {
       if (studentId !== "gjest" && !currentIds.has(studentId)) {
+        // UI deactivation: hides the student from rosters without deleting the Supabase Auth user.
         deletedIds.add(studentId);
       }
     });
@@ -518,7 +507,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=24");
+  await import("./app.js?v=31");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
@@ -529,3 +518,6 @@ async function bootAuthenticatedApp() {
 }
 
 bootAuthenticatedApp();
+
+
+

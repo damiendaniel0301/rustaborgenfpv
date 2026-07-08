@@ -119,32 +119,6 @@ button {
   color: var(--ink);
 }
 
-.login-panel select {
-  appearance: none;
-}
-
-.code-field,
-.create-user-panel {
-  display: grid;
-  gap: 8px;
-}
-
-.code-field {
-  margin-top: 12px;
-}
-
-.create-user-panel {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-}
-
-.create-user-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
 .full-button {
   width: 100%;
   margin-top: 8px;
@@ -170,10 +144,7 @@ button {
   font-weight: 700;
 }
 
-.secure-hidden,
-.secure-auth-active #loginInstructorCodeGroup,
-.secure-auth-active #createInstructorCodeGroup,
-.secure-auth-active #createUserPanel {
+.secure-hidden {
   display: none !important;
 }
 
@@ -202,14 +173,6 @@ button {
   border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.role-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-.role-button,
 .nav-button,
 .primary-button,
 .secondary-button,
@@ -220,12 +183,6 @@ button {
   font-weight: 700;
 }
 
-.role-button {
-  background: rgba(255, 255, 255, 0.12);
-  color: #dbe8fb;
-}
-
-.role-button.active,
 .primary-button {
   background: var(--blue);
   color: white;
