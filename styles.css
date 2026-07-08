@@ -1,15 +1,21 @@
 :root {
-  --bg: #f6f8fb;
+  --bg: #eef4f8;
   --panel: #ffffff;
-  --ink: #142033;
-  --muted: #66758a;
-  --line: #dbe3ee;
-  --blue: #2367d1;
-  --green: #1d8f62;
-  --amber: #c98515;
-  --red: #c74343;
-  --navy: #17243a;
-  --shadow: 0 16px 40px rgba(24, 38, 58, 0.12);
+  --panel-soft: #f8fbfd;
+  --ink: #17212f;
+  --muted: #617084;
+  --line: #d7e1ea;
+  --blue: #1f6fcb;
+  --blue-strong: #174f93;
+  --green: #1a8f68;
+  --green-strong: #117250;
+  --amber: #b97812;
+  --red: #bf3e4a;
+  --navy: #101b2a;
+  --navy-2: #17283d;
+  --sky: #e3f2ff;
+  --shadow: 0 18px 46px rgba(22, 35, 52, 0.12);
+  --shadow-soft: 0 10px 26px rgba(22, 35, 52, 0.08);
 }
 
 * {
@@ -20,7 +26,8 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--ink);
-  background: var(--bg);
+  background:
+    linear-gradient(180deg, #f6fafc 0%, var(--bg) 44%, #eaf1f5 100%);
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -35,6 +42,23 @@ button {
   cursor: pointer;
 }
 
+button,
+a,
+input,
+select,
+textarea {
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(31, 111, 203, 0.24);
+  outline-offset: 2px;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 320px 1fr;
@@ -42,12 +66,18 @@ button {
 }
 
 .sidebar {
+  position: sticky;
+  top: 0;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 24px;
+  gap: 18px;
+  padding: 22px;
   color: #eef4ff;
-  background: var(--navy);
+  background:
+    linear-gradient(180deg, #0f1b2b 0%, var(--navy-2) 54%, #0e1724 100%);
 }
 
 .brand {
@@ -61,8 +91,10 @@ button {
   place-items: center;
   width: 54px;
   height: 54px;
-  border-radius: 8px;
-  background: #eef4ff;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 14px;
+  background: #f4fbff;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
 }
 
 .brand-mark svg {
@@ -80,6 +112,7 @@ button {
 
 .brand strong {
   font-size: 22px;
+  line-height: 1.05;
 }
 
 .brand span,
@@ -92,8 +125,9 @@ button {
 .account-card {
   padding: 18px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.075);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .login-panel h2 {
@@ -181,13 +215,14 @@ button {
 .link-button {
   min-height: 44px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 700;
 }
 
 .primary-button {
-  background: var(--blue);
+  background: linear-gradient(180deg, #2578d8 0%, var(--blue) 100%);
   color: white;
+  box-shadow: 0 8px 18px rgba(31, 111, 203, 0.22);
 }
 
 .primary-button,
@@ -204,12 +239,12 @@ button {
 
 .side-nav {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .nav-button {
   width: 100%;
-  padding: 0 14px;
+  padding: 0 13px;
   color: #dbe8fb;
   text-align: left;
   background: transparent;
@@ -218,12 +253,14 @@ button {
 .nav-bottom-link {
   margin-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.075);
 }
 
 .nav-button.active,
 .nav-button:hover {
-  background: rgba(255, 255, 255, 0.13);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 3px 0 0 #6ed8b7;
 }
 
 .nav-summary {
@@ -253,7 +290,8 @@ button {
 
 main {
   min-width: 0;
-  padding: 28px;
+  max-width: 1440px;
+  padding: 30px;
 }
 
 .topbar,
@@ -266,7 +304,13 @@ main {
 }
 
 .topbar {
-  margin-bottom: 24px;
+  margin-bottom: 26px;
+  padding: 20px 22px;
+  border: 1px solid rgba(215, 225, 234, 0.72);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
 }
 
 .instructor-student-tabs {
@@ -327,7 +371,7 @@ main {
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--ink);
   background: #fff;
 }
@@ -347,9 +391,10 @@ main {
   min-height: 42px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 999px;
   color: var(--ink);
-  background: #f8fbff;
+  background: #f8fbfd;
+  box-shadow: 0 5px 14px rgba(22, 35, 52, 0.05);
 }
 
 .student-tab.active {
@@ -380,12 +425,13 @@ p {
 
 h1 {
   margin-bottom: 0;
-  font-size: 34px;
+  font-size: clamp(30px, 3vw, 42px);
+  letter-spacing: 0;
 }
 
 h2 {
   margin-bottom: 10px;
-  font-size: 24px;
+  font-size: clamp(22px, 2vw, 28px);
 }
 
 h3 {
@@ -395,7 +441,7 @@ h3 {
 
 p {
   color: var(--muted);
-  line-height: 1.45;
+  line-height: 1.55;
 }
 
 .progress-ring {
@@ -403,7 +449,7 @@ p {
   place-items: center;
   width: 76px;
   height: 76px;
-  border: 8px solid #d9e5f6;
+  border: 8px solid #d9e8f4;
   border-top-color: var(--green);
   border-radius: 50%;
   background: #fff;
@@ -431,9 +477,9 @@ p {
 .task-item,
 .review-card {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--panel);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .status-panel {
@@ -441,6 +487,7 @@ p {
   padding: 24px;
   overflow: hidden;
   position: relative;
+  isolation: isolate;
 }
 
 .status-panel::after {
@@ -450,7 +497,7 @@ p {
   bottom: 20px;
   width: 96px;
   height: 68px;
-  opacity: 0.16;
+  opacity: 0.14;
   background:
     radial-gradient(circle at 12px 12px, var(--ink) 0 8px, transparent 9px),
     radial-gradient(circle at 84px 12px, var(--ink) 0 8px, transparent 9px),
@@ -458,6 +505,24 @@ p {
     radial-gradient(circle at 84px 56px, var(--ink) 0 8px, transparent 9px),
     linear-gradient(var(--ink), var(--ink)) center / 72px 8px no-repeat,
     linear-gradient(var(--ink), var(--ink)) center / 8px 52px no-repeat;
+}
+
+.status-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(135deg, rgba(227, 242, 255, 0.84), rgba(255, 255, 255, 0) 54%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 253, 0.92));
+}
+
+.simulator-panel {
+  border-top: 4px solid var(--blue);
+}
+
+.whoop-panel {
+  border-top: 4px solid var(--green);
 }
 
 .status-panel span,
@@ -479,17 +544,17 @@ progress {
 }
 
 progress::-webkit-progress-bar {
-  background: #e8eef7;
+  background: #e3ebf3;
 }
 
 progress::-webkit-progress-value {
-  background: var(--green);
+  background: linear-gradient(90deg, var(--green), #38b58b);
 }
 
 .next-action,
 .exam-panel {
   margin-top: 18px;
-  padding: 20px;
+  padding: 22px;
 }
 
 .next-action strong {
@@ -513,12 +578,24 @@ progress::-webkit-progress-value {
   align-items: center;
   color: white;
   text-decoration: none;
-  background: var(--green);
+  background: linear-gradient(180deg, #25a77b 0%, var(--green) 100%);
+  box-shadow: 0 8px 18px rgba(26, 143, 104, 0.2);
 }
 
 .secondary-button {
   color: var(--ink);
-  background: #edf2f8;
+  background: #eaf0f5;
+  border: 1px solid #d8e2eb;
+}
+
+.primary-button:hover,
+.link-button:hover,
+.danger-button:hover {
+  transform: translateY(-1px);
+}
+
+.secondary-button:hover {
+  background: #dfe8f0;
 }
 
 .badge {
@@ -528,13 +605,13 @@ progress::-webkit-progress-value {
   padding: 0 12px;
   border-radius: 999px;
   color: var(--amber);
-  background: #fff5df;
+  background: #fff4d8;
   font-weight: 800;
 }
 
 .badge.open {
   color: var(--green);
-  background: #e7f8ef;
+  background: #e3f8ee;
 }
 
 .task-list,
@@ -548,7 +625,12 @@ progress::-webkit-progress-value {
   grid-template-columns: 38px 1fr auto;
   gap: 14px;
   align-items: center;
-  padding: 16px;
+  padding: 17px;
+}
+
+.task-item:hover {
+  border-color: #c3d7e8;
+  box-shadow: var(--shadow);
 }
 
 .task-item.locked {
@@ -557,7 +639,7 @@ progress::-webkit-progress-value {
 
 .task-item.optional {
   border-color: #f0d59a;
-  background: #fffaf0;
+  background: #fff9eb;
 }
 
 .task-item.optional .check-button {
@@ -579,7 +661,7 @@ progress::-webkit-progress-value {
   padding: 0 8px;
   border-radius: 999px;
   color: #8a5a00;
-  background: #ffe8ac;
+  background: #ffe5a3;
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
@@ -644,8 +726,8 @@ progress::-webkit-progress-value {
   gap: 14px;
   padding: 16px;
   border: 1px solid #cfe0f6;
-  border-radius: 8px;
-  background: #f4f8ff;
+  border-radius: 12px;
+  background: #f3f8fc;
 }
 
 .recording-guide h4 {
@@ -658,7 +740,7 @@ progress::-webkit-progress-value {
   width: 100%;
   height: auto;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: #ffffff;
 }
 
@@ -674,8 +756,8 @@ progress::-webkit-progress-value {
   gap: 16px;
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f8fbff;
+  border-radius: 12px;
+  background: #f8fbfd;
 }
 
 .exam-exercise-card strong {
@@ -695,15 +777,15 @@ progress::-webkit-progress-value {
 .certification-card,
 .summary-card {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--panel);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .certification-notice {
   padding: 18px;
-  border-color: #f0d59a;
-  background: #fffaf0;
+  border-color: #ebcf8d;
+  background: #fff8e9;
 }
 
 .certification-notice strong {
@@ -760,8 +842,8 @@ progress::-webkit-progress-value {
 .role-compare > div {
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f8fbff;
+  border-radius: 12px;
+  background: #f8fbfd;
 }
 
 .role-compare h4 {
@@ -802,9 +884,9 @@ progress::-webkit-progress-value {
   margin-bottom: 14px;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: var(--shadow);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-soft);
 }
 
 .review-filter label {
@@ -819,9 +901,9 @@ progress::-webkit-progress-value {
   min-width: 220px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--ink);
-  background: #f8fbff;
+  background: #f8fbfd;
   font: inherit;
   font-weight: 700;
 }
@@ -866,7 +948,7 @@ progress::-webkit-progress-value {
   margin-bottom: 18px;
   padding: 14px 16px;
   border: 1px solid #f0c66f;
-  border-radius: 8px;
+  border-radius: 12px;
   color: #5a3808;
   background: #fff4dc;
   font-weight: 800;
@@ -886,9 +968,9 @@ progress::-webkit-progress-value {
   gap: 14px;
   padding: 18px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--panel);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .form-row {
@@ -917,9 +999,20 @@ progress::-webkit-progress-value {
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--ink);
   background: #fff;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus,
+.login-panel input:focus,
+.login-panel select:focus,
+.exam-controls input:focus,
+.review-note:focus {
+  border-color: rgba(31, 111, 203, 0.72);
+  box-shadow: 0 0 0 4px rgba(31, 111, 203, 0.1);
 }
 
 .form-row textarea {
@@ -963,7 +1056,7 @@ progress::-webkit-progress-value {
   min-height: 34px;
   padding: 0 10px;
   border: 1px solid #b9c9dd;
-  border-radius: 6px;
+  border-radius: 9px;
   color: var(--blue);
   background: #eef5ff;
   font-weight: 800;
@@ -984,7 +1077,7 @@ progress::-webkit-progress-value {
   margin: 0;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .core-event-options,
@@ -1002,8 +1095,8 @@ progress::-webkit-progress-value {
   min-height: 36px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #f8fbff;
+  border-radius: 9px;
+  background: #f8fbfd;
   font-weight: 800;
 }
 
@@ -1016,9 +1109,9 @@ progress::-webkit-progress-value {
 .empty-log-card,
 .flight-log-card {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--panel);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .core-event-card {
@@ -1053,11 +1146,11 @@ progress::-webkit-progress-value {
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 14px;
-  padding: 14px;
+  padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: var(--shadow);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-soft);
 }
 
 .flight-log-report-panel .form-row {
@@ -1077,9 +1170,9 @@ progress::-webkit-progress-value {
   margin-bottom: 14px;
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f8fbff;
-  box-shadow: var(--shadow);
+  border-radius: 12px;
+  background: #f8fbfd;
+  box-shadow: var(--shadow-soft);
 }
 
 .summary-header {
@@ -1106,7 +1199,7 @@ progress::-webkit-progress-value {
 .summary-grid div {
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: #ffffff;
 }
 
@@ -1156,7 +1249,12 @@ progress::-webkit-progress-value {
   grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr) auto;
   gap: 14px;
   align-items: center;
-  padding: 16px;
+  padding: 17px;
+}
+
+.flight-log-card:hover {
+  border-color: #c3d7e8;
+  box-shadow: var(--shadow);
 }
 
 .flight-log-main h3,
@@ -1181,7 +1279,7 @@ progress::-webkit-progress-value {
   align-items: center;
   min-height: 28px;
   padding: 0 9px;
-  border-radius: 6px;
+  border-radius: 999px;
   color: #153a29;
   background: #dff5ea;
   font-size: 12px;
@@ -1213,10 +1311,11 @@ progress::-webkit-progress-value {
   min-height: 44px;
   padding: 0 14px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   color: white;
-  background: var(--red);
+  background: linear-gradient(180deg, #d34a56 0%, var(--red) 100%);
   font-weight: 800;
+  box-shadow: 0 8px 18px rgba(191, 62, 74, 0.18);
 }
 
 .hidden {
@@ -1230,10 +1329,20 @@ progress::-webkit-progress-value {
 
   .sidebar {
     position: static;
+    min-height: auto;
+    max-height: none;
   }
 
   main {
     padding: 20px;
+  }
+
+  .side-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .nav-bottom-link {
+    margin-top: 0;
   }
 
   .status-grid,
@@ -1307,6 +1416,14 @@ progress::-webkit-progress-value {
   }
 
   .flight-log-form {
+    grid-template-columns: 1fr;
+  }
+
+  .side-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .battery-pack-entry {
     grid-template-columns: 1fr;
   }
 
