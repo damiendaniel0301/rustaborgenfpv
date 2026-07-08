@@ -862,6 +862,17 @@ progress::-webkit-progress-value {
   font-size: 13px;
 }
 
+.flight-log-warning {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid #f0c66f;
+  border-radius: 8px;
+  color: #5a3808;
+  background: #fff4dc;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .flight-log-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
