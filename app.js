@@ -681,26 +681,26 @@ function summarizeDrones(logs) {
   }, {});
 }
 
-function formatBatterySummary(summary, escape = true) {
+function batterySummaryLines(summary, escape = true) {
   const entries = Object.entries(summary).sort((a, b) => b[1].cycles - a[1].cycles || a[0].localeCompare(b[0]));
-  if (!entries.length) return "-";
-  return entries
-    .map(([battery, data]) => {
+  return entries.map(([battery, data]) => {
       const name = escape ? escapeHtml(battery) : battery;
       return `${name}: ${data.cycles} cycles / ${data.minutes} min / ${formatHoursFromMinutes(data.minutes)}`;
-    })
-    .join(", ");
+    });
 }
 
-function formatDroneSummary(summary, escape = true) {
+function droneSummaryLines(summary, escape = true) {
   const entries = Object.entries(summary).sort((a, b) => b[1].sorties - a[1].sorties || a[0].localeCompare(b[0]));
-  if (!entries.length) return "-";
-  return entries
-    .map(([drone, data]) => {
+  return entries.map(([drone, data]) => {
       const name = escape ? escapeHtml(drone) : drone;
       return `${name}: ${data.sorties} sorties / ${data.minutes} min / ${formatHoursFromMinutes(data.minutes)}`;
-    })
-    .join(", ");
+    });
+}
+
+function renderSummaryLines(lines) {
+  return lines.length
+    ? `<span class="summary-subline">${lines.join("</span><span class=\"summary-subline\">")}</span>`
+    : `<span class="summary-subline">-</span>`;
 }
 
 function flightLogSortLabel() {
@@ -775,8 +775,8 @@ function renderFlightLogSummary() {
       <p><strong>Mission type:</strong> ${formatCountMap(summary.missionTypes)}</p>
       <p><strong>Flight mode:</strong> ${formatCountMap(summary.flightModes)}</p>
       <p><strong>Core events:</strong> ${formatCountMap(summary.coreEvents)}</p>
-      <p><strong>Drone / Airframe:</strong> ${formatDroneSummary(summary.drones)}</p>
-      <p><strong>Battery / pack no.:</strong> ${formatBatterySummary(summary.batteries)}</p>
+      <div class="summary-line-block"><strong>Drone / Airframe:</strong>${renderSummaryLines(droneSummaryLines(summary.drones))}</div>
+      <div class="summary-line-block"><strong>Battery / pack no.:</strong>${renderSummaryLines(batterySummaryLines(summary.batteries))}</div>
     </div>
   `;
 }
@@ -1039,7 +1039,7 @@ function buildWorksheetXml(logs, user) {
 
   rowIndex++;
   rows.push(worksheetRow(["Oppsummering"], rowIndex++, 1));
-  [
+  const summaryRows = [
     ["Antall sorties", summary.totalFlights],
     ["Total flytid", `${summary.totalMinutes} min / ${summary.totalHours}`],
     ["Datoer", `${summary.firstDate} - ${summary.lastDate}`],
@@ -1049,10 +1049,17 @@ function buildWorksheetXml(logs, user) {
     ["Issues / incidents", summary.incidentCount],
     ["Mission type", countMapText(summary.missionTypes)],
     ["Flight mode", countMapText(summary.flightModes)],
-    ["Core events", countMapText(summary.coreEvents)],
-    ["Drone / Airframe", formatDroneSummary(summary.drones, false)],
-    ["Battery / pack no.", formatBatterySummary(summary.batteries, false)]
-  ].forEach((row) => rows.push(worksheetRow(row, rowIndex++)));
+    ["Core events", countMapText(summary.coreEvents)]
+  ];
+  summaryRows.forEach((row) => rows.push(worksheetRow(row, rowIndex++)));
+
+  rows.push(worksheetRow(["Drone / Airframe"], rowIndex++, 2));
+  const droneLines = droneSummaryLines(summary.drones, false);
+  (droneLines.length ? droneLines : ["-"]).forEach((line) => rows.push(worksheetRow(["", line], rowIndex++)));
+
+  rows.push(worksheetRow(["Battery / pack no."], rowIndex++, 2));
+  const batteryLines = batterySummaryLines(summary.batteries, false);
+  (batteryLines.length ? batteryLines : ["-"]).forEach((line) => rows.push(worksheetRow(["", line], rowIndex++)));
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">

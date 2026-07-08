@@ -1087,6 +1087,18 @@ progress::-webkit-progress-value {
   margin-bottom: 6px;
 }
 
+.summary-line-block {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.summary-subline {
+  display: block;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .compact-heading {
   margin-bottom: 12px;
 }
