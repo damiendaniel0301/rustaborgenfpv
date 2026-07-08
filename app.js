@@ -660,6 +660,28 @@ function formatCountMap(counts) {
   return entries.length ? entries.map(([key, count]) => `${escapeHtml(key)}: ${count}`).join(", ") : "-";
 }
 
+function summarizeBatteries(logs) {
+  return logs.reduce((summary, log) => {
+    const battery = log.batteryPackNo || "";
+    if (!battery) return summary;
+    if (!summary[battery]) summary[battery] = { cycles: 0, minutes: 0 };
+    summary[battery].cycles += 1;
+    summary[battery].minutes += Number(log.flightTimeMinutes) || 0;
+    return summary;
+  }, {});
+}
+
+function formatBatterySummary(summary, escape = true) {
+  const entries = Object.entries(summary).sort((a, b) => b[1].cycles - a[1].cycles || a[0].localeCompare(b[0]));
+  if (!entries.length) return "-";
+  return entries
+    .map(([battery, data]) => {
+      const name = escape ? escapeHtml(battery) : battery;
+      return `${name}: ${data.cycles} cycles / ${data.minutes} min / ${formatHoursFromMinutes(data.minutes)}`;
+    })
+    .join(", ");
+}
+
 function flightLogSortLabel() {
   const labels = {
     date: "Dato",
@@ -696,10 +718,8 @@ function summarizeFlightLogs(logs) {
     missionTypes: countBy(logs, (log) => log.missionType),
     flightModes: countBy(logs, (log) => log.flightMode),
     coreEvents: countBy(logs, (log) => log.coreEvents),
-    pilots: countBy(logs, (log) => log.operatorPilot),
     drones: countBy(logs, (log) => log.droneAirframe),
-    locations: countBy(logs, (log) => log.location),
-    batteries: countBy(logs, (log) => log.batteryPackNo)
+    batteries: summarizeBatteries(logs)
   };
 }
 
@@ -738,10 +758,8 @@ function renderFlightLogSummary() {
       <p><strong>Mission type:</strong> ${formatCountMap(summary.missionTypes)}</p>
       <p><strong>Flight mode:</strong> ${formatCountMap(summary.flightModes)}</p>
       <p><strong>Core events:</strong> ${formatCountMap(summary.coreEvents)}</p>
-      <p><strong>Pilot:</strong> ${formatCountMap(summary.pilots)}</p>
       <p><strong>Drone / Airframe:</strong> ${formatCountMap(summary.drones)}</p>
-      <p><strong>Location:</strong> ${formatCountMap(summary.locations)}</p>
-      <p><strong>Battery / pack no.:</strong> ${formatCountMap(summary.batteries)}</p>
+      <p><strong>Battery / pack no.:</strong> ${formatBatterySummary(summary.batteries)}</p>
     </div>
   `;
 }
@@ -1018,10 +1036,8 @@ function buildWorksheetXml(logs, user) {
     ["Mission type", countMapText(summary.missionTypes)],
     ["Flight mode", countMapText(summary.flightModes)],
     ["Core events", countMapText(summary.coreEvents)],
-    ["Pilot", countMapText(summary.pilots)],
     ["Drone / Airframe", countMapText(summary.drones)],
-    ["Location", countMapText(summary.locations)],
-    ["Battery / pack no.", countMapText(summary.batteries)]
+    ["Battery / pack no.", formatBatterySummary(summary.batteries, false)]
   ].forEach((row) => rows.push(worksheetRow(row, rowIndex++)));
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
