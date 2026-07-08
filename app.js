@@ -610,7 +610,7 @@ function flightLogsForSelectedUser() {
 
 function flightLogSortValue(log, key) {
   if (key === "date") return `${log.date || ""} ${log.takeoffTime || ""}`;
-  if (key === "flightTimeMinutes" || key === "cumulativeFlightHours") return Number(log[key]) || 0;
+  if (key === "flightTimeMinutes") return Number(log[key]) || 0;
   return String(log[key] || "").toLowerCase();
 }
 
@@ -671,6 +671,17 @@ function summarizeBatteries(logs) {
   }, {});
 }
 
+function summarizeDrones(logs) {
+  return logs.reduce((summary, log) => {
+    const drone = log.droneAirframe || "";
+    if (!drone) return summary;
+    if (!summary[drone]) summary[drone] = { sorties: 0, minutes: 0 };
+    summary[drone].sorties += 1;
+    summary[drone].minutes += Number(log.flightTimeMinutes) || 0;
+    return summary;
+  }, {});
+}
+
 function formatBatterySummary(summary, escape = true) {
   const entries = Object.entries(summary).sort((a, b) => b[1].cycles - a[1].cycles || a[0].localeCompare(b[0]));
   if (!entries.length) return "-";
@@ -678,6 +689,17 @@ function formatBatterySummary(summary, escape = true) {
     .map(([battery, data]) => {
       const name = escape ? escapeHtml(battery) : battery;
       return `${name}: ${data.cycles} cycles / ${data.minutes} min / ${formatHoursFromMinutes(data.minutes)}`;
+    })
+    .join(", ");
+}
+
+function formatDroneSummary(summary, escape = true) {
+  const entries = Object.entries(summary).sort((a, b) => b[1].sorties - a[1].sorties || a[0].localeCompare(b[0]));
+  if (!entries.length) return "-";
+  return entries
+    .map(([drone, data]) => {
+      const name = escape ? escapeHtml(drone) : drone;
+      return `${name}: ${data.sorties} sorties / ${data.minutes} min / ${formatHoursFromMinutes(data.minutes)}`;
     })
     .join(", ");
 }
@@ -692,7 +714,6 @@ function flightLogSortLabel() {
     missionType: "Mission type",
     flightMode: "Flight mode",
     flightTimeMinutes: "Flight time",
-    cumulativeFlightHours: "Cumulative hours",
     batteryPackNo: "Battery / pack no."
   };
   const direction = flightLogSortDirection === "asc" ? "stigende" : "synkende";
@@ -702,15 +723,12 @@ function flightLogSortLabel() {
 function summarizeFlightLogs(logs) {
   const totalMinutes = logs.reduce((sum, log) => sum + (Number(log.flightTimeMinutes) || 0), 0);
   const sortedDates = logs.map((log) => log.date).filter(Boolean).sort();
-  const cumulativeHours = logs
-    .map((log) => Number(log.cumulativeFlightHours) || 0)
-    .sort((a, b) => b - a)[0] || 0;
 
   return {
     totalFlights: logs.length,
     totalMinutes,
     totalHours: formatHoursFromMinutes(totalMinutes),
-    cumulativeHours,
+    cumulativeHours: (totalMinutes / 60).toFixed(2),
     firstDate: sortedDates[0] || "-",
     lastDate: sortedDates[sortedDates.length - 1] || "-",
     maintenanceCount: logs.filter((log) => log.maintenanceRequired).length,
@@ -718,7 +736,7 @@ function summarizeFlightLogs(logs) {
     missionTypes: countBy(logs, (log) => log.missionType),
     flightModes: countBy(logs, (log) => log.flightMode),
     coreEvents: countBy(logs, (log) => log.coreEvents),
-    drones: countBy(logs, (log) => log.droneAirframe),
+    drones: summarizeDrones(logs),
     batteries: summarizeBatteries(logs)
   };
 }
@@ -758,7 +776,7 @@ function renderFlightLogSummary() {
       <p><strong>Mission type:</strong> ${formatCountMap(summary.missionTypes)}</p>
       <p><strong>Flight mode:</strong> ${formatCountMap(summary.flightModes)}</p>
       <p><strong>Core events:</strong> ${formatCountMap(summary.coreEvents)}</p>
-      <p><strong>Drone / Airframe:</strong> ${formatCountMap(summary.drones)}</p>
+      <p><strong>Drone / Airframe:</strong> ${formatDroneSummary(summary.drones)}</p>
       <p><strong>Battery / pack no.:</strong> ${formatBatterySummary(summary.batteries)}</p>
     </div>
   `;
@@ -823,7 +841,7 @@ function flightLogFromForm() {
     takeoffTime: document.querySelector("#takeoffTime").value,
     landingTime: document.querySelector("#landingTime").value,
     flightTimeMinutes: Number(document.querySelector("#flightTimeMinutes").value) || 0,
-    cumulativeFlightHours: Number(document.querySelector("#cumulativeFlightHours").value) || 0,
+    cumulativeFlightHours: 0,
     batteryPackNo: document.querySelector("#batteryPackNo").value.trim(),
     weather: document.querySelector("#weather").value.trim(),
     flightMode: document.querySelector("#flightMode").value,
@@ -849,7 +867,6 @@ function populateFlightLogForm(log) {
   document.querySelector("#takeoffTime").value = log.takeoffTime;
   document.querySelector("#landingTime").value = log.landingTime;
   document.querySelector("#flightTimeMinutes").value = log.flightTimeMinutes || "";
-  document.querySelector("#cumulativeFlightHours").value = log.cumulativeFlightHours || "";
   document.querySelector("#batteryPackNo").value = log.batteryPackNo;
   document.querySelector("#weather").value = log.weather;
   document.querySelector("#flightMode").value = log.flightMode;
@@ -897,7 +914,6 @@ function renderFlightLog() {
         <div class="flight-log-details">
           <span>${escapeHtml(log.takeoffTime || "--:--")} - ${escapeHtml(log.landingTime || "--:--")}</span>
           <strong>${log.flightTimeMinutes || 0} min</strong>
-          <span>Total: ${log.cumulativeFlightHours || 0} t</span>
           <span>Batteri: ${escapeHtml(log.batteryPackNo || "-")}</span>
           <span>Vær: ${escapeHtml(log.weather || "-")}</span>
         </div>
@@ -993,7 +1009,7 @@ function buildWorksheetXml(logs, user) {
 
   const headers = [
     "Date", "Sortie No.", "Operator / Pilot", "Drone / Airframe", "Location", "Mission type",
-    "Takeoff", "Landing", "Flight time min", "Cumulative h", "Battery", "Weather", "Mode",
+    "Takeoff", "Landing", "Flight time min", "Battery", "Weather", "Mode",
     "Core events", "Issues / incidents", "Maintenance", "Maintenance notes", "Remarks"
   ];
   rows.push(worksheetRow(headers, rowIndex++, 1));
@@ -1009,7 +1025,6 @@ function buildWorksheetXml(logs, user) {
       log.takeoffTime,
       log.landingTime,
       Number(log.flightTimeMinutes) || 0,
-      Number(log.cumulativeFlightHours) || 0,
       log.batteryPackNo,
       log.weather,
       log.flightMode,
@@ -1036,19 +1051,19 @@ function buildWorksheetXml(logs, user) {
     ["Mission type", countMapText(summary.missionTypes)],
     ["Flight mode", countMapText(summary.flightModes)],
     ["Core events", countMapText(summary.coreEvents)],
-    ["Drone / Airframe", countMapText(summary.drones)],
+    ["Drone / Airframe", formatDroneSummary(summary.drones, false)],
     ["Battery / pack no.", formatBatterySummary(summary.batteries, false)]
   ].forEach((row) => rows.push(worksheetRow(row, rowIndex++)));
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
   <sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>
-  <dimension ref="A1:R${rowIndex - 1}"/>
+  <dimension ref="A1:Q${rowIndex - 1}"/>
   <cols>
     <col min="1" max="2" width="16" customWidth="1"/>
     <col min="3" max="6" width="22" customWidth="1"/>
     <col min="7" max="10" width="14" customWidth="1"/>
-    <col min="11" max="18" width="20" customWidth="1"/>
+    <col min="11" max="17" width="20" customWidth="1"/>
   </cols>
   <sheetData>${rows.join("")}</sheetData>
   <pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>
