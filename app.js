@@ -419,6 +419,7 @@ function setView(viewName) {
     flightLog: "Fly log"
   };
   document.querySelector("#viewTitle").textContent = titles[viewName];
+  window.dispatchEvent(new CustomEvent("droneflyver:view-change", { detail: { viewName } }));
 }
 
 function renderTaskList(stepKey, targetId) {

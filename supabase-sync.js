@@ -10,6 +10,7 @@ const configured = Boolean(
 const stateId = config.stateId || "rustaborgenfpv";
 const client = configured ? window.supabase.createClient(config.url, config.anonKey) : null;
 const originalSetItem = Storage.prototype.setItem;
+const remoteRefreshIntervalMs = 10 * 60 * 1000;
 let authProfile = null;
 let saveTimer;
 let lastRemoteSnapshot = "";
@@ -529,14 +530,18 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=39");
+  await import("./app.js?v=40");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
   setStatus("Synkronisert");
 
   window.addEventListener("focus", refreshFromRemote);
-  window.setInterval(refreshFromRemote, 30000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshFromRemote();
+  });
+  window.addEventListener("droneflyver:view-change", refreshFromRemote);
+  window.setInterval(refreshFromRemote, remoteRefreshIntervalMs);
 }
 
 bootAuthenticatedApp();
