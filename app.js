@@ -169,6 +169,7 @@ const lessons = {
 let state = loadState();
 let activeRole = state.user.role;
 let reviewStep = "step1";
+let flightLogFormDirty = false;
 
 const views = {
   dashboard: document.querySelector("#dashboardView"),
@@ -604,6 +605,11 @@ function renderCoreEventOptions() {
     .join("");
 }
 
+function setFlightLogFormDirty(isDirty) {
+  flightLogFormDirty = Boolean(isDirty);
+  window.droneflyverHasUnsavedWork = () => flightLogFormDirty;
+}
+
 function resetFlightLogForm() {
   const form = document.querySelector("#flightLogForm");
   if (!form) return;
@@ -614,6 +620,7 @@ function resetFlightLogForm() {
   document.querySelector("#flightDate").value = date;
   document.querySelector("#sortieNo").value = generateSortieNumber(date);
   document.querySelector("#operatorPilot").value = state.user.name === "Gjest" ? "" : state.user.name;
+  setFlightLogFormDirty(false);
 }
 
 function flightLogFromForm() {
@@ -670,6 +677,7 @@ function populateFlightLogForm(log) {
   document.querySelector("#maintenanceRequired").checked = log.maintenanceRequired;
   document.querySelector("#maintenanceNotes").value = log.maintenanceNotes;
   document.querySelector("#flightRemarks").value = log.remarks;
+  setFlightLogFormDirty(false);
 }
 
 function renderFlightLog() {
@@ -940,6 +948,7 @@ document.querySelector("#flightLogForm")?.addEventListener("submit", (event) => 
   if (index >= 0) state.flightLogs[index] = log;
   else state.flightLogs.push(log);
   state.flightLogs = normalizeFlightLogs(state.flightLogs);
+  setFlightLogFormDirty(false);
   saveState();
   render();
   resetFlightLogForm();
@@ -947,11 +956,16 @@ document.querySelector("#flightLogForm")?.addEventListener("submit", (event) => 
 
 document.querySelector("#clearFlightLogForm")?.addEventListener("click", resetFlightLogForm);
 
+document.querySelector("#flightLogForm")?.addEventListener("input", () => {
+  setFlightLogFormDirty(true);
+});
+
 document.querySelector("#flightDate")?.addEventListener("change", (event) => {
   const sortie = document.querySelector("#sortieNo");
   if (sortie && !document.querySelector("#flightLogId").value) {
     sortie.value = generateSortieNumber(event.target.value || todayString());
   }
+  setFlightLogFormDirty(true);
 });
 
 ["#takeoffTime", "#landingTime"].forEach((selector) => {
@@ -962,6 +976,7 @@ document.querySelector("#flightDate")?.addEventListener("change", (event) => {
     );
     if (minutes > 0) {
       document.querySelector("#flightTimeMinutes").value = minutes;
+      setFlightLogFormDirty(true);
     }
   });
 });

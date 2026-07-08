@@ -16,6 +16,8 @@ let lastRemoteSnapshot = "";
 let pushing = false;
 let lastKnownStudentIds = new Set();
 
+window.droneflyverHasUnsavedWork = window.droneflyverHasUnsavedWork || (() => false);
+
 function readLocalState() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -391,6 +393,11 @@ async function refreshFromRemote() {
   lastRemoteSnapshot = lastRemoteSnapshot || remoteSnapshot;
 
   if (remoteSnapshot !== localSnapshot && remoteSnapshot !== lastRemoteSnapshot) {
+    if (window.droneflyverHasUnsavedWork?.()) {
+      lastRemoteSnapshot = remoteSnapshot;
+      setStatus("Ulagret flylogg - lagre før oppdatering", true);
+      return;
+    }
     applyAuthState(normalizedRemoteData);
     window.location.reload();
     return;
@@ -511,7 +518,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=34");
+  await import("./app.js?v=35");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
