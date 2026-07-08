@@ -530,7 +530,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=42");
+  await import("./app.js?v=43");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
@@ -540,7 +540,6 @@ async function bootAuthenticatedApp() {
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) refreshFromRemote();
   });
-  window.addEventListener("droneflyver:view-change", refreshFromRemote);
   window.setInterval(refreshFromRemote, remoteRefreshIntervalMs);
 }
 

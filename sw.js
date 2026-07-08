@@ -1,4 +1,4 @@
-const CACHE_NAME = "droneflyver-v42";
+const CACHE_NAME = "droneflyver-v43";
 
 const APP_ASSETS = [
   "./",
