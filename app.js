@@ -172,6 +172,8 @@ let reviewStep = "step1";
 let flightLogFormDirty = false;
 let selectedFlightLogUserId = state.user.id || state.currentStudentId || "gjest";
 let flightLogSummaryVisible = false;
+let flightLogSortKey = "date";
+let flightLogSortDirection = "desc";
 
 const views = {
   dashboard: document.querySelector("#dashboardView"),
@@ -605,6 +607,22 @@ function flightLogsForSelectedUser() {
   return state.flightLogs.filter((log) => log.ownerId === user.id);
 }
 
+function flightLogSortValue(log, key) {
+  if (key === "date") return `${log.date || ""} ${log.takeoffTime || ""}`;
+  if (key === "flightTimeMinutes" || key === "cumulativeFlightHours") return Number(log[key]) || 0;
+  return String(log[key] || "").toLowerCase();
+}
+
+function sortedFlightLogs(logs = flightLogsForSelectedUser()) {
+  const direction = flightLogSortDirection === "asc" ? 1 : -1;
+  return [...logs].sort((a, b) => {
+    const aValue = flightLogSortValue(a, flightLogSortKey);
+    const bValue = flightLogSortValue(b, flightLogSortKey);
+    if (typeof aValue === "number" && typeof bValue === "number") return (aValue - bValue) * direction;
+    return String(aValue).localeCompare(String(bValue), "no") * direction;
+  });
+}
+
 function generateSortieNumber(date = todayString()) {
   const compact = dateCompact(date);
   const sameDayCount = flightLogsForActiveStudent().filter((log) => log.date === date).length + 1;
@@ -641,6 +659,23 @@ function formatCountMap(counts) {
   return entries.length ? entries.map(([key, count]) => `${escapeHtml(key)}: ${count}`).join(", ") : "-";
 }
 
+function flightLogSortLabel() {
+  const labels = {
+    date: "Dato",
+    sortieNo: "Sortie No.",
+    operatorPilot: "Pilot",
+    droneAirframe: "Drone / Airframe",
+    location: "Location",
+    missionType: "Mission type",
+    flightMode: "Flight mode",
+    flightTimeMinutes: "Flight time",
+    cumulativeFlightHours: "Cumulative hours",
+    batteryPackNo: "Battery / pack no."
+  };
+  const direction = flightLogSortDirection === "asc" ? "stigende" : "synkende";
+  return `${labels[flightLogSortKey] || "Dato"} (${direction})`;
+}
+
 function summarizeFlightLogs(logs) {
   const totalMinutes = logs.reduce((sum, log) => sum + (Number(log.flightTimeMinutes) || 0), 0);
   const sortedDates = logs.map((log) => log.date).filter(Boolean).sort();
@@ -659,7 +694,11 @@ function summarizeFlightLogs(logs) {
     incidentCount: logs.filter((log) => log.issuesIncidents).length,
     missionTypes: countBy(logs, (log) => log.missionType),
     flightModes: countBy(logs, (log) => log.flightMode),
-    coreEvents: countBy(logs, (log) => log.coreEvents)
+    coreEvents: countBy(logs, (log) => log.coreEvents),
+    pilots: countBy(logs, (log) => log.operatorPilot),
+    drones: countBy(logs, (log) => log.droneAirframe),
+    locations: countBy(logs, (log) => log.location),
+    batteries: countBy(logs, (log) => log.batteryPackNo)
   };
 }
 
@@ -694,9 +733,14 @@ function renderFlightLogSummary() {
       <div><span>Issues/incidents</span><strong>${summary.incidentCount}</strong></div>
     </div>
     <div class="summary-lines">
+      <p><strong>Sortering:</strong> ${escapeHtml(flightLogSortLabel())}</p>
       <p><strong>Mission type:</strong> ${formatCountMap(summary.missionTypes)}</p>
       <p><strong>Flight mode:</strong> ${formatCountMap(summary.flightModes)}</p>
       <p><strong>Core events:</strong> ${formatCountMap(summary.coreEvents)}</p>
+      <p><strong>Pilot:</strong> ${formatCountMap(summary.pilots)}</p>
+      <p><strong>Drone / Airframe:</strong> ${formatCountMap(summary.drones)}</p>
+      <p><strong>Location:</strong> ${formatCountMap(summary.locations)}</p>
+      <p><strong>Battery / pack no.:</strong> ${formatCountMap(summary.batteries)}</p>
     </div>
   `;
 }
@@ -802,13 +846,14 @@ function populateFlightLogForm(log) {
 
 function renderFlightLog() {
   renderCoreEventOptions();
-  const logs = flightLogsForSelectedUser();
+  const logs = sortedFlightLogs();
   const user = selectedFlightLogUser();
   const list = document.querySelector("#flightLogList");
   const count = document.querySelector("#flightLogCount");
   if (!list || !count) return;
 
   renderFlightLogUserSelect();
+  renderFlightLogSortControls();
   renderFlightLogSummary();
   count.textContent = `${logs.length} ${logs.length === 1 ? "flyvning" : "flyvninger"} - ${user.name}`;
 
@@ -866,6 +911,13 @@ function renderFlightLogUserSelect() {
   select.value = selected.id;
 }
 
+function renderFlightLogSortControls() {
+  const sortSelect = document.querySelector("#flightLogSortSelect");
+  const directionSelect = document.querySelector("#flightLogSortDirection");
+  if (sortSelect) sortSelect.value = flightLogSortKey;
+  if (directionSelect) directionSelect.value = flightLogSortDirection;
+}
+
 function sanitizeFileName(value = "flylogg") {
   return value.toLowerCase().replace(/[^a-z0-9æøå]+/gi, "-").replace(/^-|-$/g, "") || "flylogg";
 }
@@ -874,111 +926,245 @@ function excelCell(value = "") {
   return escapeHtml(value).replaceAll("\n", "<br>");
 }
 
-function flightLogExcelRows(logs) {
-  return logs.map((log) => `
-    <tr>
-      <td>${excelCell(log.date)}</td>
-      <td>${excelCell(log.sortieNo)}</td>
-      <td>${excelCell(log.operatorPilot)}</td>
-      <td>${excelCell(log.droneAirframe)}</td>
-      <td>${excelCell(log.location)}</td>
-      <td>${excelCell(log.missionType)}</td>
-      <td>${excelCell(log.takeoffTime)}</td>
-      <td>${excelCell(log.landingTime)}</td>
-      <td>${log.flightTimeMinutes || 0}</td>
-      <td>${log.cumulativeFlightHours || 0}</td>
-      <td>${excelCell(log.batteryPackNo)}</td>
-      <td>${excelCell(log.weather)}</td>
-      <td>${excelCell(log.flightMode)}</td>
-      <td>${excelCell(log.coreEvents.join(", "))}</td>
-      <td>${excelCell(log.issuesIncidents)}</td>
-      <td>${log.maintenanceRequired ? "Ja" : "Nei"}</td>
-      <td>${excelCell(log.maintenanceNotes)}</td>
-      <td>${excelCell(log.remarks)}</td>
-    </tr>
-  `).join("");
+function xmlEscape(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
-function buildFlightLogExcel(logs, user) {
-  const summary = summarizeFlightLogs(logs);
-  return `
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <style>
-          @page { size: A4 landscape; margin: 12mm; }
-          body { font-family: Arial, sans-serif; color: #111827; }
-          h1 { margin: 0 0 4px; font-size: 22px; }
-          h2 { margin: 24px 0 8px; font-size: 16px; }
-          p { margin: 0 0 12px; color: #4b5563; }
-          table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-          th, td { border: 1px solid #9ca3af; padding: 6px; vertical-align: top; font-size: 11px; }
-          th { background: #e5edf8; color: #111827; font-weight: 700; }
-          .summary td:first-child { width: 240px; font-weight: 700; background: #f3f4f6; }
-          .warning { margin: 10px 0 14px; padding: 8px; border: 1px solid #d97706; background: #fffbeb; font-weight: 700; }
-        </style>
-      </head>
-      <body>
-        <h1>Fly log - ${excelCell(user.name)}</h1>
-        <p>Eksportert ${new Date().toLocaleString("no-NO")}</p>
-        <div class="warning">Ikke legg inn gradert informasjon, henvis til Sortie No og lagre gradert informasjon på egnet enhet.</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Sortie No.</th>
-              <th>Operator / Pilot</th>
-              <th>Drone / Airframe</th>
-              <th>Location</th>
-              <th>Mission type</th>
-              <th>Takeoff</th>
-              <th>Landing</th>
-              <th>Flight time min</th>
-              <th>Cumulative h</th>
-              <th>Battery</th>
-              <th>Weather</th>
-              <th>Mode</th>
-              <th>Core events</th>
-              <th>Issues / incidents</th>
-              <th>Maintenance</th>
-              <th>Maintenance notes</th>
-              <th>Remarks</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${logs.length ? flightLogExcelRows(logs) : `<tr><td colspan="18">Ingen flyvninger loggført.</td></tr>`}
-          </tbody>
-        </table>
+function columnName(index) {
+  let name = "";
+  let number = index + 1;
+  while (number > 0) {
+    const remainder = (number - 1) % 26;
+    name = String.fromCharCode(65 + remainder) + name;
+    number = Math.floor((number - 1) / 26);
+  }
+  return name;
+}
 
-        <h2>Oppsummering</h2>
-        <table class="summary">
-          <tbody>
-            <tr><td>Antall sorties</td><td>${summary.totalFlights}</td></tr>
-            <tr><td>Total flytid</td><td>${summary.totalMinutes} min / ${summary.totalHours}</td></tr>
-            <tr><td>Datoer</td><td>${excelCell(summary.firstDate)} - ${excelCell(summary.lastDate)}</td></tr>
-            <tr><td>Cumulative flight hours</td><td>${summary.cumulativeHours} t</td></tr>
-            <tr><td>Vedlikehold kreves</td><td>${summary.maintenanceCount}</td></tr>
-            <tr><td>Issues / incidents</td><td>${summary.incidentCount}</td></tr>
-            <tr><td>Mission type</td><td>${formatCountMap(summary.missionTypes)}</td></tr>
-            <tr><td>Flight mode</td><td>${formatCountMap(summary.flightModes)}</td></tr>
-            <tr><td>Core events</td><td>${formatCountMap(summary.coreEvents)}</td></tr>
-          </tbody>
-        </table>
-      </body>
-    </html>
-  `;
+function worksheetCell(value, rowIndex, columnIndex, style = 0) {
+  const reference = `${columnName(columnIndex)}${rowIndex}`;
+  const styleAttribute = style ? ` s="${style}"` : "";
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return `<c r="${reference}"${styleAttribute}><v>${value}</v></c>`;
+  }
+  return `<c r="${reference}" t="inlineStr"${styleAttribute}><is><t>${xmlEscape(value)}</t></is></c>`;
+}
+
+function worksheetRow(values, rowIndex, style = 0) {
+  return `<row r="${rowIndex}">${values.map((value, index) => worksheetCell(value, rowIndex, index, style)).join("")}</row>`;
+}
+
+function countMapText(counts) {
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  return entries.length ? entries.map(([key, count]) => `${key}: ${count}`).join(", ") : "-";
+}
+
+function buildWorksheetXml(logs, user) {
+  const summary = summarizeFlightLogs(logs);
+  const rows = [];
+  let rowIndex = 1;
+  rows.push(worksheetRow([`Fly log - ${user.name}`], rowIndex++, 1));
+  rows.push(worksheetRow([`Eksportert ${new Date().toLocaleString("no-NO")}`], rowIndex++));
+  rows.push(worksheetRow(["Ikke legg inn gradert informasjon, henvis til Sortie No og lagre gradert informasjon på egnet enhet."], rowIndex++, 2));
+  rowIndex++;
+
+  const headers = [
+    "Date", "Sortie No.", "Operator / Pilot", "Drone / Airframe", "Location", "Mission type",
+    "Takeoff", "Landing", "Flight time min", "Cumulative h", "Battery", "Weather", "Mode",
+    "Core events", "Issues / incidents", "Maintenance", "Maintenance notes", "Remarks"
+  ];
+  rows.push(worksheetRow(headers, rowIndex++, 1));
+
+  logs.forEach((log) => {
+    rows.push(worksheetRow([
+      log.date,
+      log.sortieNo,
+      log.operatorPilot,
+      log.droneAirframe,
+      log.location,
+      log.missionType,
+      log.takeoffTime,
+      log.landingTime,
+      Number(log.flightTimeMinutes) || 0,
+      Number(log.cumulativeFlightHours) || 0,
+      log.batteryPackNo,
+      log.weather,
+      log.flightMode,
+      log.coreEvents.join(", "),
+      log.issuesIncidents,
+      log.maintenanceRequired ? "Ja" : "Nei",
+      log.maintenanceNotes,
+      log.remarks
+    ], rowIndex++));
+  });
+
+  if (!logs.length) rows.push(worksheetRow(["Ingen flyvninger loggført."], rowIndex++));
+
+  rowIndex++;
+  rows.push(worksheetRow(["Oppsummering"], rowIndex++, 1));
+  [
+    ["Antall sorties", summary.totalFlights],
+    ["Total flytid", `${summary.totalMinutes} min / ${summary.totalHours}`],
+    ["Datoer", `${summary.firstDate} - ${summary.lastDate}`],
+    ["Sortering", flightLogSortLabel()],
+    ["Cumulative flight hours", `${summary.cumulativeHours} t`],
+    ["Vedlikehold kreves", summary.maintenanceCount],
+    ["Issues / incidents", summary.incidentCount],
+    ["Mission type", countMapText(summary.missionTypes)],
+    ["Flight mode", countMapText(summary.flightModes)],
+    ["Core events", countMapText(summary.coreEvents)],
+    ["Pilot", countMapText(summary.pilots)],
+    ["Drone / Airframe", countMapText(summary.drones)],
+    ["Location", countMapText(summary.locations)],
+    ["Battery / pack no.", countMapText(summary.batteries)]
+  ].forEach((row) => rows.push(worksheetRow(row, rowIndex++)));
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>
+  <dimension ref="A1:R${rowIndex - 1}"/>
+  <cols>
+    <col min="1" max="2" width="16" customWidth="1"/>
+    <col min="3" max="6" width="22" customWidth="1"/>
+    <col min="7" max="10" width="14" customWidth="1"/>
+    <col min="11" max="18" width="20" customWidth="1"/>
+  </cols>
+  <sheetData>${rows.join("")}</sheetData>
+  <pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>
+  <pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>
+</worksheet>`;
+}
+
+function crc32(bytes) {
+  let crc = -1;
+  for (const byte of bytes) {
+    crc = (crc >>> 8) ^ crc32.table[(crc ^ byte) & 0xff];
+  }
+  return (crc ^ -1) >>> 0;
+}
+
+crc32.table = Array.from({ length: 256 }, (_, index) => {
+  let value = index;
+  for (let bit = 0; bit < 8; bit += 1) {
+    value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+  }
+  return value >>> 0;
+});
+
+function littleEndian(value, bytes) {
+  return Array.from({ length: bytes }, (_, index) => (value >>> (index * 8)) & 0xff);
+}
+
+function concatBytes(parts) {
+  const length = parts.reduce((sum, part) => sum + part.length, 0);
+  const output = new Uint8Array(length);
+  let offset = 0;
+  parts.forEach((part) => {
+    output.set(part, offset);
+    offset += part.length;
+  });
+  return output;
+}
+
+function createZip(files) {
+  const encoder = new TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+
+  files.forEach(({ name, content }) => {
+    const nameBytes = encoder.encode(name);
+    const contentBytes = encoder.encode(content);
+    const checksum = crc32(contentBytes);
+    const localHeader = new Uint8Array([
+      ...littleEndian(0x04034b50, 4), ...littleEndian(20, 2), 0, 0, 0, 0, 0, 0, 0, 0,
+      ...littleEndian(checksum, 4), ...littleEndian(contentBytes.length, 4), ...littleEndian(contentBytes.length, 4),
+      ...littleEndian(nameBytes.length, 2), 0, 0
+    ]);
+    localParts.push(localHeader, nameBytes, contentBytes);
+
+    const centralHeader = new Uint8Array([
+      ...littleEndian(0x02014b50, 4), ...littleEndian(20, 2), ...littleEndian(20, 2), 0, 0, 0, 0, 0, 0, 0, 0,
+      ...littleEndian(checksum, 4), ...littleEndian(contentBytes.length, 4), ...littleEndian(contentBytes.length, 4),
+      ...littleEndian(nameBytes.length, 2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...littleEndian(offset, 4)
+    ]);
+    centralParts.push(centralHeader, nameBytes);
+    offset += localHeader.length + nameBytes.length + contentBytes.length;
+  });
+
+  const centralDirectory = concatBytes(centralParts);
+  const endRecord = new Uint8Array([
+    ...littleEndian(0x06054b50, 4), 0, 0, 0, 0,
+    ...littleEndian(files.length, 2), ...littleEndian(files.length, 2),
+    ...littleEndian(centralDirectory.length, 4), ...littleEndian(offset, 4), 0, 0
+  ]);
+
+  return concatBytes([...localParts, centralDirectory, endRecord]);
+}
+
+function buildFlightLogXlsx(logs, user) {
+  return createZip([
+    {
+      name: "[Content_Types].xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`
+    },
+    {
+      name: "_rels/.rels",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`
+    },
+    {
+      name: "xl/workbook.xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Fly log" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`
+    },
+    {
+      name: "xl/_rels/workbook.xml.rels",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`
+    },
+    {
+      name: "xl/styles.xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font></fonts>
+  <fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE5EDF8"/><bgColor indexed="64"/></patternFill></fill></fills>
+  <borders count="2"><border/><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"/></cellXfs>
+</styleSheet>`
+    },
+    { name: "xl/worksheets/sheet1.xml", content: buildWorksheetXml(logs, user) }
+  ]);
 }
 
 function exportSelectedFlightLogToExcel() {
-  const logs = flightLogsForSelectedUser();
+  const logs = sortedFlightLogs();
   const user = selectedFlightLogUser();
-  const html = buildFlightLogExcel(logs, user);
-  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const bytes = buildFlightLogXlsx(logs, user);
+  const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `flylogg-${sanitizeFileName(user.name)}-${todayString()}.xls`;
+  link.download = `flylogg-${sanitizeFileName(user.name)}-${todayString()}.xlsx`;
   document.body.append(link);
   link.click();
   link.remove();
@@ -1217,6 +1403,16 @@ document.querySelector("#flightLogForm")?.addEventListener("input", () => {
 document.querySelector("#flightLogUserSelect")?.addEventListener("change", (event) => {
   selectedFlightLogUserId = event.target.value;
   flightLogSummaryVisible = false;
+  renderFlightLog();
+});
+
+document.querySelector("#flightLogSortSelect")?.addEventListener("change", (event) => {
+  flightLogSortKey = event.target.value;
+  renderFlightLog();
+});
+
+document.querySelector("#flightLogSortDirection")?.addEventListener("change", (event) => {
+  flightLogSortDirection = event.target.value;
   renderFlightLog();
 });
 
