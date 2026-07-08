@@ -1004,6 +1004,89 @@ progress::-webkit-progress-value {
   margin-top: 22px;
 }
 
+.flight-log-report-panel {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.flight-log-report-panel .form-row {
+  min-width: 260px;
+}
+
+.flight-log-report-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.flight-log-summary {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbff;
+  box-shadow: var(--shadow);
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.summary-header h3 {
+  margin-bottom: 0;
+}
+
+.summary-header > strong {
+  font-size: 18px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summary-grid div {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.summary-grid span,
+.summary-grid strong {
+  display: block;
+}
+
+.summary-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.summary-grid strong {
+  margin-top: 4px;
+}
+
+.summary-lines p {
+  margin-bottom: 6px;
+}
+
 .compact-heading {
   margin-bottom: 12px;
 }
@@ -1104,7 +1187,8 @@ progress::-webkit-progress-value {
   .review-card,
   .role-compare,
   .flight-log-layout,
-  .flight-log-card {
+  .flight-log-card,
+  .summary-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1142,6 +1226,24 @@ progress::-webkit-progress-value {
   .review-filter {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .flight-log-report-panel,
+  .summary-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .flight-log-report-panel .form-row {
+    min-width: 0;
+  }
+
+  .flight-log-report-actions {
+    justify-content: stretch;
+  }
+
+  .flight-log-report-actions button {
+    flex: 1 1 180px;
   }
 
   .review-filter select {

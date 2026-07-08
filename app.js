@@ -170,6 +170,8 @@ let state = loadState();
 let activeRole = state.user.role;
 let reviewStep = "step1";
 let flightLogFormDirty = false;
+let selectedFlightLogUserId = state.user.id || state.currentStudentId || "gjest";
+let flightLogSummaryVisible = false;
 
 const views = {
   dashboard: document.querySelector("#dashboardView"),
@@ -569,6 +571,40 @@ function flightLogsForActiveStudent() {
   return state.flightLogs.filter((log) => log.ownerId === ownerId);
 }
 
+function flightLogUsers() {
+  const users = [
+    state.user.id ? { id: state.user.id, name: state.user.name, role: state.user.role } : null,
+    ...state.instructors.map((instructor) => ({ ...instructor, role: "instructor" })),
+    ...state.students.map((student) => ({ id: student.id, name: student.name, role: "student" }))
+  ].filter((user) => user?.id && user.id !== "gjest");
+
+  return users.reduce((unique, user) => {
+    if (!unique.some((item) => item.id === user.id)) unique.push(user);
+    return unique;
+  }, []);
+}
+
+function selectedFlightLogUser() {
+  const users = flightLogUsers();
+  const fallback = users.find((user) => user.id === state.user.id) || users[0] || { id: flightLogOwnerId(), name: state.user.name };
+
+  if (state.user.role !== "instructor") {
+    selectedFlightLogUserId = fallback.id;
+    return fallback;
+  }
+
+  if (!users.some((user) => user.id === selectedFlightLogUserId)) {
+    selectedFlightLogUserId = fallback.id;
+  }
+
+  return users.find((user) => user.id === selectedFlightLogUserId) || fallback;
+}
+
+function flightLogsForSelectedUser() {
+  const user = selectedFlightLogUser();
+  return state.flightLogs.filter((log) => log.ownerId === user.id);
+}
+
 function generateSortieNumber(date = todayString()) {
   const compact = dateCompact(date);
   const sameDayCount = flightLogsForActiveStudent().filter((log) => log.date === date).length + 1;
@@ -583,6 +619,86 @@ function minutesBetween(start, end) {
   let minutes = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
   if (minutes < 0) minutes += 24 * 60;
   return minutes;
+}
+
+function formatHoursFromMinutes(minutes = 0) {
+  return `${(minutes / 60).toFixed(2)} t`;
+}
+
+function countBy(logs, getValues) {
+  return logs.reduce((counts, log) => {
+    const values = getValues(log);
+    const list = Array.isArray(values) ? values : [values];
+    list.filter(Boolean).forEach((value) => {
+      counts[value] = (counts[value] || 0) + 1;
+    });
+    return counts;
+  }, {});
+}
+
+function formatCountMap(counts) {
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  return entries.length ? entries.map(([key, count]) => `${escapeHtml(key)}: ${count}`).join(", ") : "-";
+}
+
+function summarizeFlightLogs(logs) {
+  const totalMinutes = logs.reduce((sum, log) => sum + (Number(log.flightTimeMinutes) || 0), 0);
+  const sortedDates = logs.map((log) => log.date).filter(Boolean).sort();
+  const cumulativeHours = logs
+    .map((log) => Number(log.cumulativeFlightHours) || 0)
+    .sort((a, b) => b - a)[0] || 0;
+
+  return {
+    totalFlights: logs.length,
+    totalMinutes,
+    totalHours: formatHoursFromMinutes(totalMinutes),
+    cumulativeHours,
+    firstDate: sortedDates[0] || "-",
+    lastDate: sortedDates[sortedDates.length - 1] || "-",
+    maintenanceCount: logs.filter((log) => log.maintenanceRequired).length,
+    incidentCount: logs.filter((log) => log.issuesIncidents).length,
+    missionTypes: countBy(logs, (log) => log.missionType),
+    flightModes: countBy(logs, (log) => log.flightMode),
+    coreEvents: countBy(logs, (log) => log.coreEvents)
+  };
+}
+
+function renderFlightLogSummary() {
+  const panel = document.querySelector("#flightLogSummaryPanel");
+  if (!panel) return;
+
+  if (!flightLogSummaryVisible) {
+    panel.classList.add("hidden");
+    panel.innerHTML = "";
+    return;
+  }
+
+  const logs = flightLogsForSelectedUser();
+  const user = selectedFlightLogUser();
+  const summary = summarizeFlightLogs(logs);
+
+  panel.classList.remove("hidden");
+  panel.innerHTML = `
+    <div class="summary-header">
+      <div>
+        <span class="task-meta">Oppsummering</span>
+        <h3>${escapeHtml(user.name)}</h3>
+      </div>
+      <strong>${summary.totalFlights} sorties</strong>
+    </div>
+    <div class="summary-grid">
+      <div><span>Flytid</span><strong>${summary.totalMinutes} min / ${summary.totalHours}</strong></div>
+      <div><span>Datoer</span><strong>${escapeHtml(summary.firstDate)} - ${escapeHtml(summary.lastDate)}</strong></div>
+      <div><span>Cumulative hours</span><strong>${summary.cumulativeHours} t</strong></div>
+      <div><span>Vedlikehold</span><strong>${summary.maintenanceCount}</strong></div>
+      <div><span>Issues/incidents</span><strong>${summary.incidentCount}</strong></div>
+    </div>
+    <div class="summary-lines">
+      <p><strong>Mission type:</strong> ${formatCountMap(summary.missionTypes)}</p>
+      <p><strong>Flight mode:</strong> ${formatCountMap(summary.flightModes)}</p>
+      <p><strong>Core events:</strong> ${formatCountMap(summary.coreEvents)}</p>
+    </div>
+  `;
 }
 
 function renderCoreEventOptions() {
@@ -686,12 +802,15 @@ function populateFlightLogForm(log) {
 
 function renderFlightLog() {
   renderCoreEventOptions();
-  const logs = flightLogsForActiveStudent();
+  const logs = flightLogsForSelectedUser();
+  const user = selectedFlightLogUser();
   const list = document.querySelector("#flightLogList");
   const count = document.querySelector("#flightLogCount");
   if (!list || !count) return;
 
-  count.textContent = `${logs.length} ${logs.length === 1 ? "flyvning" : "flyvninger"}`;
+  renderFlightLogUserSelect();
+  renderFlightLogSummary();
+  count.textContent = `${logs.length} ${logs.length === 1 ? "flyvning" : "flyvninger"} - ${user.name}`;
 
   if (!document.querySelector("#flightDate").value) {
     resetFlightLogForm();
@@ -729,10 +848,141 @@ function renderFlightLog() {
             ${log.remarks ? `<p><strong>Remarks:</strong> ${escapeHtml(log.remarks)}</p>` : ""}
           </div>
         ` : ""}
-        <button class="secondary-button" type="button" data-edit-flight-log="${log.id}">Rediger</button>
+        ${log.ownerId === flightLogOwnerId() ? `<button class="secondary-button" type="button" data-edit-flight-log="${log.id}">Rediger</button>` : ""}
       </article>
     `)
     .join("");
+}
+
+function renderFlightLogUserSelect() {
+  const select = document.querySelector("#flightLogUserSelect");
+  if (!select) return;
+
+  const users = flightLogUsers();
+  const selected = selectedFlightLogUser();
+  select.innerHTML = users
+    .map((user) => `<option value="${escapeHtml(user.id)}">${escapeHtml(user.name)} (${user.role === "instructor" ? "instruktør" : "elev"})</option>`)
+    .join("");
+  select.value = selected.id;
+}
+
+function sanitizeFileName(value = "flylogg") {
+  return value.toLowerCase().replace(/[^a-z0-9æøå]+/gi, "-").replace(/^-|-$/g, "") || "flylogg";
+}
+
+function excelCell(value = "") {
+  return escapeHtml(value).replaceAll("\n", "<br>");
+}
+
+function flightLogExcelRows(logs) {
+  return logs.map((log) => `
+    <tr>
+      <td>${excelCell(log.date)}</td>
+      <td>${excelCell(log.sortieNo)}</td>
+      <td>${excelCell(log.operatorPilot)}</td>
+      <td>${excelCell(log.droneAirframe)}</td>
+      <td>${excelCell(log.location)}</td>
+      <td>${excelCell(log.missionType)}</td>
+      <td>${excelCell(log.takeoffTime)}</td>
+      <td>${excelCell(log.landingTime)}</td>
+      <td>${log.flightTimeMinutes || 0}</td>
+      <td>${log.cumulativeFlightHours || 0}</td>
+      <td>${excelCell(log.batteryPackNo)}</td>
+      <td>${excelCell(log.weather)}</td>
+      <td>${excelCell(log.flightMode)}</td>
+      <td>${excelCell(log.coreEvents.join(", "))}</td>
+      <td>${excelCell(log.issuesIncidents)}</td>
+      <td>${log.maintenanceRequired ? "Ja" : "Nei"}</td>
+      <td>${excelCell(log.maintenanceNotes)}</td>
+      <td>${excelCell(log.remarks)}</td>
+    </tr>
+  `).join("");
+}
+
+function buildFlightLogExcel(logs, user) {
+  const summary = summarizeFlightLogs(logs);
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          @page { size: A4 landscape; margin: 12mm; }
+          body { font-family: Arial, sans-serif; color: #111827; }
+          h1 { margin: 0 0 4px; font-size: 22px; }
+          h2 { margin: 24px 0 8px; font-size: 16px; }
+          p { margin: 0 0 12px; color: #4b5563; }
+          table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+          th, td { border: 1px solid #9ca3af; padding: 6px; vertical-align: top; font-size: 11px; }
+          th { background: #e5edf8; color: #111827; font-weight: 700; }
+          .summary td:first-child { width: 240px; font-weight: 700; background: #f3f4f6; }
+          .warning { margin: 10px 0 14px; padding: 8px; border: 1px solid #d97706; background: #fffbeb; font-weight: 700; }
+        </style>
+      </head>
+      <body>
+        <h1>Fly log - ${excelCell(user.name)}</h1>
+        <p>Eksportert ${new Date().toLocaleString("no-NO")}</p>
+        <div class="warning">Ikke legg inn gradert informasjon, henvis til Sortie No og lagre gradert informasjon på egnet enhet.</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Sortie No.</th>
+              <th>Operator / Pilot</th>
+              <th>Drone / Airframe</th>
+              <th>Location</th>
+              <th>Mission type</th>
+              <th>Takeoff</th>
+              <th>Landing</th>
+              <th>Flight time min</th>
+              <th>Cumulative h</th>
+              <th>Battery</th>
+              <th>Weather</th>
+              <th>Mode</th>
+              <th>Core events</th>
+              <th>Issues / incidents</th>
+              <th>Maintenance</th>
+              <th>Maintenance notes</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logs.length ? flightLogExcelRows(logs) : `<tr><td colspan="18">Ingen flyvninger loggført.</td></tr>`}
+          </tbody>
+        </table>
+
+        <h2>Oppsummering</h2>
+        <table class="summary">
+          <tbody>
+            <tr><td>Antall sorties</td><td>${summary.totalFlights}</td></tr>
+            <tr><td>Total flytid</td><td>${summary.totalMinutes} min / ${summary.totalHours}</td></tr>
+            <tr><td>Datoer</td><td>${excelCell(summary.firstDate)} - ${excelCell(summary.lastDate)}</td></tr>
+            <tr><td>Cumulative flight hours</td><td>${summary.cumulativeHours} t</td></tr>
+            <tr><td>Vedlikehold kreves</td><td>${summary.maintenanceCount}</td></tr>
+            <tr><td>Issues / incidents</td><td>${summary.incidentCount}</td></tr>
+            <tr><td>Mission type</td><td>${formatCountMap(summary.missionTypes)}</td></tr>
+            <tr><td>Flight mode</td><td>${formatCountMap(summary.flightModes)}</td></tr>
+            <tr><td>Core events</td><td>${formatCountMap(summary.coreEvents)}</td></tr>
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
+function exportSelectedFlightLogToExcel() {
+  const logs = flightLogsForSelectedUser();
+  const user = selectedFlightLogUser();
+  const html = buildFlightLogExcel(logs, user);
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `flylogg-${sanitizeFileName(user.name)}-${todayString()}.xls`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function renderReview() {
@@ -963,6 +1213,19 @@ document.querySelector("#clearFlightLogForm")?.addEventListener("click", resetFl
 document.querySelector("#flightLogForm")?.addEventListener("input", () => {
   setFlightLogFormDirty(true);
 });
+
+document.querySelector("#flightLogUserSelect")?.addEventListener("change", (event) => {
+  selectedFlightLogUserId = event.target.value;
+  flightLogSummaryVisible = false;
+  renderFlightLog();
+});
+
+document.querySelector("#summarizeFlightLogButton")?.addEventListener("click", () => {
+  flightLogSummaryVisible = true;
+  renderFlightLogSummary();
+});
+
+document.querySelector("#exportFlightLogExcelButton")?.addEventListener("click", exportSelectedFlightLogToExcel);
 
 document.querySelector("#flightDate")?.addEventListener("change", (event) => {
   const sortie = document.querySelector("#sortieNo");
