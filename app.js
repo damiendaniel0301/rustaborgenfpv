@@ -278,31 +278,43 @@ function normalizeFlightLogs(logs = []) {
 
   return logs
     .filter((log) => log && typeof log === "object")
-    .map((log) => ({
-      id: log.id || crypto.randomUUID(),
-      ownerId: log.ownerId || "",
-      date: log.date || "",
-      sortieNo: log.sortieNo || "",
-      operatorPilot: log.operatorPilot || "",
-      droneAirframe: log.droneAirframe || "",
-      location: log.location || "",
-      missionType: log.missionType || "Trening",
-      takeoffTime: log.takeoffTime || "",
-      landingTime: log.landingTime || "",
-      flightTimeMinutes: Number(log.flightTimeMinutes) || 0,
-      cumulativeFlightHours: Number(log.cumulativeFlightHours) || 0,
-      batteryPackNo: log.batteryPackNo || "",
-      weather: log.weather || "",
-      flightMode: log.flightMode || "FPV",
-      coreEvents: Array.isArray(log.coreEvents) ? log.coreEvents.filter(Boolean) : [],
-      issuesIncidents: log.issuesIncidents || "",
-      maintenanceRequired: Boolean(log.maintenanceRequired),
-      maintenanceNotes: log.maintenanceNotes || "",
-      remarks: log.remarks || "",
-      createdAt: log.createdAt || new Date().toISOString(),
-      updatedAt: log.updatedAt || new Date().toISOString()
-    }))
+    .map((log) => {
+      const batteryPackNos = normalizeBatteryPackNos(log);
+      return {
+        id: log.id || crypto.randomUUID(),
+        ownerId: log.ownerId || "",
+        date: log.date || "",
+        sortieNo: log.sortieNo || "",
+        operatorPilot: log.operatorPilot || "",
+        droneAirframe: log.droneAirframe || "",
+        location: log.location || "",
+        missionType: log.missionType || "Trening",
+        takeoffTime: log.takeoffTime || "",
+        landingTime: log.landingTime || "",
+        flightTimeMinutes: Number(log.flightTimeMinutes) || 0,
+        cumulativeFlightHours: Number(log.cumulativeFlightHours) || 0,
+        batteryPackNos,
+        batteryPackNo: batteryPackNos.join(", "),
+        weather: log.weather || "",
+        flightMode: log.flightMode || "FPV",
+        coreEvents: Array.isArray(log.coreEvents) ? log.coreEvents.filter(Boolean) : [],
+        issuesIncidents: log.issuesIncidents || "",
+        maintenanceRequired: Boolean(log.maintenanceRequired),
+        maintenanceNotes: log.maintenanceNotes || "",
+        remarks: log.remarks || "",
+        createdAt: log.createdAt || new Date().toISOString(),
+        updatedAt: log.updatedAt || new Date().toISOString()
+      };
+    })
     .sort((a, b) => `${b.date} ${b.takeoffTime}`.localeCompare(`${a.date} ${a.takeoffTime}`));
+}
+
+function normalizeBatteryPackNos(log = {}) {
+  const values = Array.isArray(log.batteryPackNos)
+    ? log.batteryPackNos
+    : String(log.batteryPackNo || "").split(/[,;\n]/);
+
+  return [...new Set(values.map((value) => String(value).trim()).filter(Boolean))];
 }
 
 function studentIdFromName(name = "Gjest") {
@@ -691,12 +703,15 @@ function formatCountMap(counts) {
 function summarizeBatteries(logs) {
   return logs.reduce((summary, log) => {
     const drone = log.droneAirframe || "Ukjent drone";
-    const battery = log.batteryPackNo || "";
-    if (!battery) return summary;
+    const batteries = normalizeBatteryPackNos(log);
+    if (!batteries.length) return summary;
+    const minutesPerBattery = (Number(log.flightTimeMinutes) || 0) / batteries.length;
     if (!summary[drone]) summary[drone] = {};
-    if (!summary[drone][battery]) summary[drone][battery] = { cycles: 0, minutes: 0 };
-    summary[drone][battery].cycles += 1;
-    summary[drone][battery].minutes += Number(log.flightTimeMinutes) || 0;
+    batteries.forEach((battery) => {
+      if (!summary[drone][battery]) summary[drone][battery] = { cycles: 0, minutes: 0 };
+      summary[drone][battery].cycles += 1;
+      summary[drone][battery].minutes += minutesPerBattery;
+    });
     return summary;
   }, {});
 }
@@ -859,6 +874,39 @@ function setFlightLogFormDirty(isDirty) {
   window.droneflyverHasUnsavedWork = () => flightLogFormDirty;
 }
 
+function batteryPackNosFromForm() {
+  const hiddenValue = document.querySelector("#batteryPackNo")?.value || "";
+  const typedValue = document.querySelector("#batteryPackInput")?.value || "";
+  return normalizeBatteryPackNos({ batteryPackNo: `${hiddenValue},${typedValue}` });
+}
+
+function setBatteryPackNos(values = []) {
+  const packs = normalizeBatteryPackNos({ batteryPackNos: values });
+  const hidden = document.querySelector("#batteryPackNo");
+  const list = document.querySelector("#batteryPackList");
+  if (hidden) hidden.value = packs.join(", ");
+  if (!list) return;
+
+  list.innerHTML = packs.length
+    ? packs.map((pack) => `
+        <button class="battery-pack-chip" type="button" data-remove-battery-pack="${escapeHtml(pack)}">
+          <span>${escapeHtml(pack)}</span>
+          <strong aria-hidden="true">x</strong>
+        </button>
+      `).join("")
+    : `<span class="battery-pack-empty">Ingen batterier lagt til</span>`;
+}
+
+function addBatteryPackFromInput() {
+  const input = document.querySelector("#batteryPackInput");
+  if (!input) return;
+
+  const packs = batteryPackNosFromForm();
+  setBatteryPackNos(packs);
+  input.value = "";
+  setFlightLogFormDirty(true);
+}
+
 function resetFlightLogForm() {
   const form = document.querySelector("#flightLogForm");
   if (!form) return;
@@ -869,6 +917,8 @@ function resetFlightLogForm() {
   document.querySelector("#flightDate").value = date;
   document.querySelector("#sortieNo").value = generateSortieNumber(date);
   document.querySelector("#operatorPilot").value = state.user.name === "Gjest" ? "" : state.user.name;
+  document.querySelector("#batteryPackInput").value = "";
+  setBatteryPackNos([]);
   setFlightLogFormDirty(false);
 }
 
@@ -876,6 +926,7 @@ function flightLogFromForm() {
   const id = document.querySelector("#flightLogId").value || crypto.randomUUID();
   const now = new Date().toISOString();
   const existing = state.flightLogs.find((log) => log.id === id);
+  const batteryPackNos = batteryPackNosFromForm();
 
   return {
     id,
@@ -890,7 +941,8 @@ function flightLogFromForm() {
     landingTime: document.querySelector("#landingTime").value,
     flightTimeMinutes: Number(document.querySelector("#flightTimeMinutes").value) || 0,
     cumulativeFlightHours: 0,
-    batteryPackNo: document.querySelector("#batteryPackNo").value.trim(),
+    batteryPackNos,
+    batteryPackNo: batteryPackNos.join(", "),
     weather: document.querySelector("#weather").value.trim(),
     flightMode: document.querySelector("#flightMode").value,
     coreEvents: [...document.querySelectorAll("#coreEventOptions input:checked")].map((input) => input.value),
@@ -915,7 +967,8 @@ function populateFlightLogForm(log) {
   document.querySelector("#takeoffTime").value = log.takeoffTime;
   document.querySelector("#landingTime").value = log.landingTime;
   document.querySelector("#flightTimeMinutes").value = log.flightTimeMinutes || "";
-  document.querySelector("#batteryPackNo").value = log.batteryPackNo;
+  document.querySelector("#batteryPackInput").value = "";
+  setBatteryPackNos(normalizeBatteryPackNos(log));
   document.querySelector("#weather").value = log.weather;
   document.querySelector("#flightMode").value = log.flightMode;
   document.querySelectorAll("#coreEventOptions input").forEach((input) => {
@@ -1512,6 +1565,14 @@ document.querySelector("#flightLogForm")?.addEventListener("submit", (event) => 
 
 document.querySelector("#clearFlightLogForm")?.addEventListener("click", resetFlightLogForm);
 
+document.querySelector("#addBatteryPackNo")?.addEventListener("click", addBatteryPackFromInput);
+
+document.querySelector("#batteryPackInput")?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  addBatteryPackFromInput();
+});
+
 document.querySelector("#flightLogForm")?.addEventListener("input", () => {
   setFlightLogFormDirty(true);
 });
@@ -1581,6 +1642,7 @@ document.querySelector("#flightDate")?.addEventListener("change", (event) => {
 document.body.addEventListener("click", (event) => {
   const check = event.target.closest(".check-button");
   const videoButton = event.target.closest("[data-video]");
+  const removeBatteryPack = event.target.closest("[data-remove-battery-pack]");
   const passButton = event.target.closest("[data-pass]");
   const failButton = event.target.closest("[data-fail]");
   const submitExercise = event.target.closest("[data-submit-exercise]");
@@ -1591,6 +1653,13 @@ document.body.addEventListener("click", (event) => {
   const clearButton = event.target.closest("[data-clear]");
   const selectStudent = event.target.closest("[data-select-student]");
   const editFlightLog = event.target.closest("[data-edit-flight-log]");
+
+  if (removeBatteryPack) {
+    const nextPacks = batteryPackNosFromForm().filter((pack) => pack !== removeBatteryPack.dataset.removeBatteryPack);
+    setBatteryPackNos(nextPacks);
+    setFlightLogFormDirty(true);
+    return;
+  }
 
   if (editFlightLog) {
     const log = state.flightLogs.find((item) => item.id === editFlightLog.dataset.editFlightLog);
