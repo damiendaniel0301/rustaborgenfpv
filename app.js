@@ -174,6 +174,9 @@ let selectedFlightLogUserId = state.user.id || state.currentStudentId || "gjest"
 let flightLogSummaryVisible = false;
 let flightLogSortKey = "date";
 let flightLogSortDirection = "desc";
+let flightLogDroneFilter = "all";
+let flightLogModeFilter = "all";
+let flightLogMissionFilter = "all";
 
 const views = {
   dashboard: document.querySelector("#dashboardView"),
@@ -607,13 +610,39 @@ function flightLogsForSelectedUser() {
   return state.flightLogs.filter((log) => log.ownerId === user.id);
 }
 
+function uniqueSorted(values) {
+  return [...new Set(values.filter(Boolean))]
+    .sort((a, b) => String(a).localeCompare(String(b), "no"));
+}
+
+function ensureFlightLogFiltersValid(logs = flightLogsForSelectedUser()) {
+  if (flightLogDroneFilter !== "all" && !logs.some((log) => log.droneAirframe === flightLogDroneFilter)) {
+    flightLogDroneFilter = "all";
+  }
+  if (flightLogModeFilter !== "all" && !logs.some((log) => log.flightMode === flightLogModeFilter)) {
+    flightLogModeFilter = "all";
+  }
+  if (flightLogMissionFilter !== "all" && !logs.some((log) => log.missionType === flightLogMissionFilter)) {
+    flightLogMissionFilter = "all";
+  }
+}
+
+function filteredFlightLogs(logs = flightLogsForSelectedUser()) {
+  return logs.filter((log) => {
+    const matchesDrone = flightLogDroneFilter === "all" || log.droneAirframe === flightLogDroneFilter;
+    const matchesMode = flightLogModeFilter === "all" || log.flightMode === flightLogModeFilter;
+    const matchesMission = flightLogMissionFilter === "all" || log.missionType === flightLogMissionFilter;
+    return matchesDrone && matchesMode && matchesMission;
+  });
+}
+
 function flightLogSortValue(log, key) {
   if (key === "date") return `${log.date || ""} ${log.takeoffTime || ""}`;
   if (key === "flightTimeMinutes") return Number(log[key]) || 0;
   return String(log[key] || "").toLowerCase();
 }
 
-function sortedFlightLogs(logs = flightLogsForSelectedUser()) {
+function sortedFlightLogs(logs = filteredFlightLogs()) {
   const direction = flightLogSortDirection === "asc" ? 1 : -1;
   return [...logs].sort((a, b) => {
     const aValue = flightLogSortValue(a, flightLogSortKey);
@@ -661,11 +690,13 @@ function formatCountMap(counts) {
 
 function summarizeBatteries(logs) {
   return logs.reduce((summary, log) => {
+    const drone = log.droneAirframe || "Ukjent drone";
     const battery = log.batteryPackNo || "";
     if (!battery) return summary;
-    if (!summary[battery]) summary[battery] = { cycles: 0, minutes: 0 };
-    summary[battery].cycles += 1;
-    summary[battery].minutes += Number(log.flightTimeMinutes) || 0;
+    if (!summary[drone]) summary[drone] = {};
+    if (!summary[drone][battery]) summary[drone][battery] = { cycles: 0, minutes: 0 };
+    summary[drone][battery].cycles += 1;
+    summary[drone][battery].minutes += Number(log.flightTimeMinutes) || 0;
     return summary;
   }, {});
 }
@@ -682,11 +713,18 @@ function summarizeDrones(logs) {
 }
 
 function batterySummaryLines(summary, escape = true) {
-  const entries = Object.entries(summary).sort((a, b) => b[1].cycles - a[1].cycles || a[0].localeCompare(b[0]));
-  return entries.map(([battery, data]) => {
-      const name = escape ? escapeHtml(battery) : battery;
-      return `${name}: ${data.cycles} cycles / ${data.minutes} min / ${formatHoursFromMinutes(data.minutes)}`;
-    });
+  const droneEntries = Object.entries(summary).sort((a, b) => a[0].localeCompare(b[0], "no"));
+  return droneEntries.flatMap(([drone, batteries]) => {
+    const droneName = escape ? escapeHtml(drone) : drone;
+    const prefix = escape ? "&nbsp;&nbsp;" : "  ";
+    const batteryLines = Object.entries(batteries)
+      .sort((a, b) => b[1].cycles - a[1].cycles || a[0].localeCompare(b[0], "no"))
+      .map(([battery, data]) => {
+        const name = escape ? escapeHtml(battery) : battery;
+        return `${prefix}${name}: ${data.cycles} cycles / ${data.minutes} min / ${formatHoursFromMinutes(data.minutes)}`;
+      });
+    return [`${droneName}:`, ...batteryLines];
+  });
 }
 
 function droneSummaryLines(summary, escape = true) {
@@ -717,6 +755,14 @@ function flightLogSortLabel() {
   };
   const direction = flightLogSortDirection === "asc" ? "stigende" : "synkende";
   return `${labels[flightLogSortKey] || "Dato"} (${direction})`;
+}
+
+function activeFlightLogFilterLabel() {
+  const filters = [];
+  if (flightLogDroneFilter !== "all") filters.push(`Drone: ${flightLogDroneFilter}`);
+  if (flightLogModeFilter !== "all") filters.push(`Flight mode: ${flightLogModeFilter}`);
+  if (flightLogMissionFilter !== "all") filters.push(`Mission type: ${flightLogMissionFilter}`);
+  return filters.length ? filters.join(" | ") : "Ingen filter";
 }
 
 function summarizeFlightLogs(logs) {
@@ -750,7 +796,9 @@ function renderFlightLogSummary() {
     return;
   }
 
-  const logs = flightLogsForSelectedUser();
+  const baseLogs = flightLogsForSelectedUser();
+  ensureFlightLogFiltersValid(baseLogs);
+  const logs = sortedFlightLogs(filteredFlightLogs(baseLogs));
   const user = selectedFlightLogUser();
   const summary = summarizeFlightLogs(logs);
 
@@ -771,6 +819,7 @@ function renderFlightLogSummary() {
       <div><span>Issues/incidents</span><strong>${summary.incidentCount}</strong></div>
     </div>
     <div class="summary-lines">
+      <p><strong>Filter:</strong> ${escapeHtml(activeFlightLogFilterLabel())}</p>
       <p><strong>Sortering:</strong> ${escapeHtml(flightLogSortLabel())}</p>
       <p><strong>Mission type:</strong> ${formatCountMap(summary.missionTypes)}</p>
       <p><strong>Flight mode:</strong> ${formatCountMap(summary.flightModes)}</p>
@@ -881,16 +930,20 @@ function populateFlightLogForm(log) {
 
 function renderFlightLog() {
   renderCoreEventOptions();
-  const logs = sortedFlightLogs();
+  const baseLogs = flightLogsForSelectedUser();
+  ensureFlightLogFiltersValid(baseLogs);
+  const logs = sortedFlightLogs(filteredFlightLogs(baseLogs));
   const user = selectedFlightLogUser();
   const list = document.querySelector("#flightLogList");
   const count = document.querySelector("#flightLogCount");
   if (!list || !count) return;
 
   renderFlightLogUserSelect();
+  renderFlightLogFilters(baseLogs);
   renderFlightLogSortControls();
   renderFlightLogSummary();
-  count.textContent = `${logs.length} ${logs.length === 1 ? "flyvning" : "flyvninger"} - ${user.name}`;
+  const filterSuffix = activeFlightLogFilterLabel() === "Ingen filter" ? "" : " (filtrert)";
+  count.textContent = `${logs.length} ${logs.length === 1 ? "flyvning" : "flyvninger"} - ${user.name}${filterSuffix}`;
 
   if (!document.querySelector("#flightDate").value) {
     resetFlightLogForm();
@@ -943,6 +996,27 @@ function renderFlightLogUserSelect() {
     .map((user) => `<option value="${escapeHtml(user.id)}">${escapeHtml(user.name)} (${user.role === "instructor" ? "instruktør" : "elev"})</option>`)
     .join("");
   select.value = selected.id;
+}
+
+function selectOptions(values, selectedValue, allLabel) {
+  return [
+    `<option value="all">${allLabel}</option>`,
+    ...values.map((value) => `<option value="${escapeHtml(value)}"${value === selectedValue ? " selected" : ""}>${escapeHtml(value)}</option>`)
+  ].join("");
+}
+
+function renderFlightLogFilters(logs = flightLogsForSelectedUser()) {
+  const droneSelect = document.querySelector("#flightLogDroneFilter");
+  const modeSelect = document.querySelector("#flightLogModeFilter");
+  const missionSelect = document.querySelector("#flightLogMissionFilter");
+  if (!droneSelect || !modeSelect || !missionSelect) return;
+
+  droneSelect.innerHTML = selectOptions(uniqueSorted(logs.map((log) => log.droneAirframe)), flightLogDroneFilter, "Alle droner");
+  modeSelect.innerHTML = selectOptions(uniqueSorted(logs.map((log) => log.flightMode)), flightLogModeFilter, "Alle flight modes");
+  missionSelect.innerHTML = selectOptions(uniqueSorted(logs.map((log) => log.missionType)), flightLogMissionFilter, "Alle mission types");
+  droneSelect.value = flightLogDroneFilter;
+  modeSelect.value = flightLogModeFilter;
+  missionSelect.value = flightLogMissionFilter;
 }
 
 function renderFlightLogSortControls() {
@@ -1011,6 +1085,7 @@ function buildWorksheetXml(logs, user) {
     "Takeoff", "Landing", "Flight time min", "Battery", "Weather", "Mode",
     "Core events", "Issues / incidents", "Maintenance", "Maintenance notes", "Remarks"
   ];
+  const headerRowIndex = rowIndex;
   rows.push(worksheetRow(headers, rowIndex++, 1));
 
   logs.forEach((log) => {
@@ -1034,6 +1109,7 @@ function buildWorksheetXml(logs, user) {
       log.remarks
     ], rowIndex++));
   });
+  const lastTableRowIndex = Math.max(headerRowIndex, rowIndex - 1);
 
   if (!logs.length) rows.push(worksheetRow(["Ingen flyvninger loggført."], rowIndex++));
 
@@ -1043,6 +1119,7 @@ function buildWorksheetXml(logs, user) {
     ["Antall sorties", summary.totalFlights],
     ["Total flytid", `${summary.totalMinutes} min / ${summary.totalHours}`],
     ["Datoer", `${summary.firstDate} - ${summary.lastDate}`],
+    ["Filter", activeFlightLogFilterLabel()],
     ["Sortering", flightLogSortLabel()],
     ["Cumulative flight hours", `${summary.cumulativeHours} t`],
     ["Vedlikehold kreves", summary.maintenanceCount],
@@ -1072,6 +1149,7 @@ function buildWorksheetXml(logs, user) {
     <col min="11" max="17" width="20" customWidth="1"/>
   </cols>
   <sheetData>${rows.join("")}</sheetData>
+  <autoFilter ref="A${headerRowIndex}:Q${lastTableRowIndex}"/>
   <pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>
   <pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>
 </worksheet>`;
@@ -1195,7 +1273,7 @@ function buildFlightLogXlsx(logs, user) {
 }
 
 function exportSelectedFlightLogToExcel() {
-  const logs = sortedFlightLogs();
+  const logs = sortedFlightLogs(filteredFlightLogs());
   const user = selectedFlightLogUser();
   const bytes = buildFlightLogXlsx(logs, user);
   const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -1441,6 +1519,24 @@ document.querySelector("#flightLogForm")?.addEventListener("input", () => {
 document.querySelector("#flightLogUserSelect")?.addEventListener("change", (event) => {
   selectedFlightLogUserId = event.target.value;
   flightLogSummaryVisible = false;
+  flightLogDroneFilter = "all";
+  flightLogModeFilter = "all";
+  flightLogMissionFilter = "all";
+  renderFlightLog();
+});
+
+document.querySelector("#flightLogDroneFilter")?.addEventListener("change", (event) => {
+  flightLogDroneFilter = event.target.value;
+  renderFlightLog();
+});
+
+document.querySelector("#flightLogModeFilter")?.addEventListener("change", (event) => {
+  flightLogModeFilter = event.target.value;
+  renderFlightLog();
+});
+
+document.querySelector("#flightLogMissionFilter")?.addEventListener("change", (event) => {
+  flightLogMissionFilter = event.target.value;
   renderFlightLog();
 });
 

@@ -1006,6 +1006,7 @@ progress::-webkit-progress-value {
 
 .flight-log-report-panel {
   display: flex;
+  flex-wrap: wrap;
   align-items: end;
   justify-content: space-between;
   gap: 14px;

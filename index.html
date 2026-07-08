@@ -418,6 +418,18 @@
                 <select id="flightLogUserSelect"></select>
               </div>
               <div class="form-row">
+                <label for="flightLogDroneFilter">Filter drone</label>
+                <select id="flightLogDroneFilter"></select>
+              </div>
+              <div class="form-row">
+                <label for="flightLogModeFilter">Filter flight mode</label>
+                <select id="flightLogModeFilter"></select>
+              </div>
+              <div class="form-row">
+                <label for="flightLogMissionFilter">Filter mission type</label>
+                <select id="flightLogMissionFilter"></select>
+              </div>
+              <div class="form-row">
                 <label for="flightLogSortSelect">Sorter etter</label>
                 <select id="flightLogSortSelect">
                   <option value="date">Dato</option>
@@ -453,6 +465,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=44"></script>
+    <script type="module" src="supabase-sync.js?v=45"></script>
   </body>
 </html>
