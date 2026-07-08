@@ -14,6 +14,7 @@ let authProfile = null;
 let saveTimer;
 let lastRemoteSnapshot = "";
 let pushing = false;
+let lastPushHadError = false;
 let lastKnownStudentIds = new Set();
 
 window.droneflyverHasUnsavedWork = window.droneflyverHasUnsavedWork || (() => false);
@@ -30,11 +31,15 @@ function writeLocalState(state) {
   originalSetItem.call(localStorage, STORAGE_KEY, JSON.stringify(state));
 }
 
+function isUuid(value = "") {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function sharedDataFromState(state = {}) {
   return {
     students: Array.isArray(state.students) ? state.students : [],
     instructors: Array.isArray(state.instructors) ? state.instructors : [],
-    flightLogs: Array.isArray(state.flightLogs) ? state.flightLogs : [],
+    flightLogs: Array.isArray(state.flightLogs) ? state.flightLogs.filter((log) => isUuid(log?.ownerId)) : [],
     deletedStudentIds: Array.isArray(state.deletedStudentIds) ? state.deletedStudentIds : []
   };
 }
@@ -355,10 +360,12 @@ async function pushSharedData(rawState) {
   pushing = false;
 
   if (error) {
+    lastPushHadError = true;
     setStatus("Supabase-feil", true);
     return;
   }
 
+  lastPushHadError = false;
   if (data) {
     lastRemoteSnapshot = snapshot(data);
   } else {
@@ -393,6 +400,10 @@ async function refreshFromRemote() {
   lastRemoteSnapshot = lastRemoteSnapshot || remoteSnapshot;
 
   if (remoteSnapshot !== localSnapshot && remoteSnapshot !== lastRemoteSnapshot) {
+    if (lastPushHadError) {
+      setStatus("Kunne ikke lagre siste endring - prøv å lagre igjen", true);
+      return;
+    }
     if (window.droneflyverHasUnsavedWork?.()) {
       lastRemoteSnapshot = remoteSnapshot;
       setStatus("Ulagret flylogg - lagre før oppdatering", true);
@@ -518,7 +529,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=36");
+  await import("./app.js?v=37");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();

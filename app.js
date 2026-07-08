@@ -307,6 +307,10 @@ function activeStudentId(appState = state) {
   return appState.user.role === "instructor" ? appState.selectedStudentId : appState.currentStudentId;
 }
 
+function flightLogOwnerId(appState = state) {
+  return appState.user.id || appState.currentStudentId || activeStudentId(appState);
+}
+
 function activeStudent(appState = state) {
   const id = activeStudentId(appState);
   return appState.students.find((student) => student.id === id) || appState.students[0];
@@ -561,7 +565,7 @@ function dateCompact(date = todayString()) {
 }
 
 function flightLogsForActiveStudent() {
-  const ownerId = activeStudentId();
+  const ownerId = flightLogOwnerId();
   return state.flightLogs.filter((log) => log.ownerId === ownerId);
 }
 
@@ -630,7 +634,7 @@ function flightLogFromForm() {
 
   return {
     id,
-    ownerId: activeStudentId(),
+    ownerId: flightLogOwnerId(),
     date: document.querySelector("#flightDate").value,
     sortieNo: document.querySelector("#sortieNo").value.trim(),
     operatorPilot: document.querySelector("#operatorPilot").value.trim(),
