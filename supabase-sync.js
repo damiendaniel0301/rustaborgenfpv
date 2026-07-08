@@ -1,4 +1,4 @@
-﻿const STORAGE_KEY = "droneflyt-state";
+const STORAGE_KEY = "droneflyt-state";
 const config = window.DRONEFLYVER_SUPABASE || {};
 const configured = Boolean(
   window.supabase &&
@@ -518,6 +518,3 @@ async function bootAuthenticatedApp() {
 }
 
 bootAuthenticatedApp();
-
-
-
