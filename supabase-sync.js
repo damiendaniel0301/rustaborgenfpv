@@ -85,6 +85,35 @@ function ensureProfileInSharedData(sharedData, profile = authProfile) {
   return next;
 }
 
+function mergeProfilesIntoSharedData(sharedData, profiles = []) {
+  const next = {
+    students: Array.isArray(sharedData?.students) ? [...sharedData.students] : [],
+    instructors: Array.isArray(sharedData?.instructors) ? [...sharedData.instructors] : []
+  };
+
+  profiles.forEach((profile) => {
+    const appUser = appUserFromProfile(profile);
+    if (appUser.role === "instructor") {
+      const instructorIndex = next.instructors.findIndex((item) => item.id === appUser.id);
+      if (instructorIndex >= 0) next.instructors[instructorIndex] = appUser;
+      else next.instructors.push(appUser);
+      return;
+    }
+
+    const studentIndex = next.students.findIndex((item) => item.id === appUser.id);
+    if (studentIndex >= 0) {
+      next.students[studentIndex] = {
+        ...next.students[studentIndex],
+        name: appUser.name
+      };
+    } else {
+      next.students.push({ id: appUser.id, name: appUser.name });
+    }
+  });
+
+  return next;
+}
+
 function applyAuthState(sharedData = {}) {
   const localState = readLocalState();
   const appUser = appUserFromProfile();
@@ -259,6 +288,22 @@ async function ensureProfile(user) {
   return inserted.data;
 }
 
+async function fetchProfilesForRoster() {
+  if (userRole() !== "instructor") return [];
+
+  const { data, error } = await client
+    .from("profiles")
+    .select("id,email,display_name,role")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    setStatus("Kunne ikke hente elevliste", true);
+    return [];
+  }
+
+  return Array.isArray(data) ? data : [];
+}
+
 async function fetchRemoteSharedData() {
   const { data, error } = await client
     .from(TABLE_NAME)
@@ -327,7 +372,8 @@ async function refreshFromRemote() {
   const remoteData = await fetchRemoteSharedData();
   if (!remoteData) return;
 
-  const normalizedRemoteData = ensureProfileInSharedData(remoteData);
+  const profileRoster = await fetchProfilesForRoster();
+  const normalizedRemoteData = ensureProfileInSharedData(mergeProfilesIntoSharedData(remoteData, profileRoster));
   const remoteSnapshot = snapshot(normalizedRemoteData);
   const localSnapshot = snapshot(sharedDataFromState(readLocalState()));
   lastRemoteSnapshot = lastRemoteSnapshot || remoteSnapshot;
@@ -441,7 +487,8 @@ async function bootAuthenticatedApp() {
   }
 
   const remoteData = await fetchRemoteSharedData();
-  const sharedData = ensureProfileInSharedData(remoteData || sharedDataFromState(readLocalState()));
+  const profileRoster = await fetchProfilesForRoster();
+  const sharedData = ensureProfileInSharedData(mergeProfilesIntoSharedData(remoteData || sharedDataFromState(readLocalState()), profileRoster));
   const authState = {
     user: appUserFromProfile(),
     sharedData
