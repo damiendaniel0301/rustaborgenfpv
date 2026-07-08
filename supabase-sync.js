@@ -303,7 +303,7 @@ async function fetchProfilesForRoster() {
   return Array.isArray(data) ? data : [];
 }
 async function fetchRemoteSharedData() {
-  const { data, error } = await client.rpc("get_drone_app_state", {
+  const { data, error } = await client.rpc("get_app_state", {
     state_id: stateId
   });
 
@@ -341,7 +341,7 @@ async function pushSharedData(rawState) {
   pushing = true;
   setStatus("Lagrer...");
 
-  const { data, error } = await client.rpc("save_drone_app_state", {
+  const { data, error } = await client.rpc("save_app_state", {
     state_id: stateId,
     new_data: sharedData
   });
@@ -507,7 +507,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=31");
+  await import("./app.js?v=32");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
