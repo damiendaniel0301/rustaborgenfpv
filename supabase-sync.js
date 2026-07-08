@@ -15,6 +15,7 @@ let authProfile = null;
 let saveTimer;
 let lastRemoteSnapshot = "";
 let pushing = false;
+let lastKnownStudentIds = new Set();
 
 function readLocalState() {
   try {
@@ -31,7 +32,8 @@ function writeLocalState(state) {
 function sharedDataFromState(state = {}) {
   return {
     students: Array.isArray(state.students) ? state.students : [],
-    instructors: Array.isArray(state.instructors) ? state.instructors : []
+    instructors: Array.isArray(state.instructors) ? state.instructors : [],
+    deletedStudentIds: Array.isArray(state.deletedStudentIds) ? state.deletedStudentIds : []
   };
 }
 
@@ -62,7 +64,8 @@ function appUserFromProfile(profile = authProfile) {
 function ensureProfileInSharedData(sharedData, profile = authProfile) {
   const next = {
     students: Array.isArray(sharedData?.students) ? [...sharedData.students] : [],
-    instructors: Array.isArray(sharedData?.instructors) ? [...sharedData.instructors] : []
+    instructors: Array.isArray(sharedData?.instructors) ? [...sharedData.instructors] : [],
+    deletedStudentIds: Array.isArray(sharedData?.deletedStudentIds) ? [...sharedData.deletedStudentIds] : []
   };
   const appUser = appUserFromProfile(profile);
 
@@ -72,6 +75,8 @@ function ensureProfileInSharedData(sharedData, profile = authProfile) {
     else next.instructors.push(appUser);
     return next;
   }
+
+  if (next.deletedStudentIds.includes(appUser.id)) return next;
 
   const studentIndex = next.students.findIndex((item) => item.id === appUser.id);
   if (studentIndex >= 0) {
@@ -88,7 +93,8 @@ function ensureProfileInSharedData(sharedData, profile = authProfile) {
 function mergeProfilesIntoSharedData(sharedData, profiles = []) {
   const next = {
     students: Array.isArray(sharedData?.students) ? [...sharedData.students] : [],
-    instructors: Array.isArray(sharedData?.instructors) ? [...sharedData.instructors] : []
+    instructors: Array.isArray(sharedData?.instructors) ? [...sharedData.instructors] : [],
+    deletedStudentIds: Array.isArray(sharedData?.deletedStudentIds) ? [...sharedData.deletedStudentIds] : []
   };
 
   profiles.forEach((profile) => {
@@ -99,6 +105,8 @@ function mergeProfilesIntoSharedData(sharedData, profiles = []) {
       else next.instructors.push(appUser);
       return;
     }
+
+    if (next.deletedStudentIds.includes(appUser.id)) return;
 
     const studentIndex = next.students.findIndex((item) => item.id === appUser.id);
     if (studentIndex >= 0) {
@@ -113,7 +121,6 @@ function mergeProfilesIntoSharedData(sharedData, profiles = []) {
 
   return next;
 }
-
 function applyAuthState(sharedData = {}) {
   const localState = readLocalState();
   const appUser = appUserFromProfile();
@@ -128,8 +135,10 @@ function applyAuthState(sharedData = {}) {
     currentStudentId: appUser.role === "student" ? appUser.id : localState.currentStudentId || "gjest",
     selectedStudentId,
     students: mergedShared.students,
-    instructors: mergedShared.instructors
+    instructors: mergedShared.instructors,
+    deletedStudentIds: mergedShared.deletedStudentIds
   });
+  lastKnownStudentIds = new Set(mergedShared.students.map((student) => student.id));
 }
 
 function setStatus(message, isError = false) {
@@ -303,7 +312,6 @@ async function fetchProfilesForRoster() {
 
   return Array.isArray(data) ? data : [];
 }
-
 async function fetchRemoteSharedData() {
   const { data, error } = await client
     .from(TABLE_NAME)
@@ -327,6 +335,17 @@ async function pushSharedData(rawState) {
     parsed = JSON.parse(rawState);
   } catch {
     return;
+  }
+
+  if (userRole() === "instructor") {
+    const currentIds = new Set((parsed.students || []).map((student) => student.id));
+    const deletedIds = new Set(Array.isArray(parsed.deletedStudentIds) ? parsed.deletedStudentIds : []);
+    lastKnownStudentIds.forEach((studentId) => {
+      if (studentId !== "gjest" && !currentIds.has(studentId)) {
+        deletedIds.add(studentId);
+      }
+    });
+    parsed.deletedStudentIds = [...deletedIds];
   }
 
   const sharedData = ensureProfileInSharedData(sharedDataFromState(parsed));
