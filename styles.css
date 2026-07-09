@@ -354,7 +354,8 @@ main {
   justify-content: flex-end;
 }
 
-.delete-student-panel {
+.delete-student-panel,
+.admin-user-panel {
   display: grid;
   flex-basis: 100%;
   gap: 8px;
@@ -362,7 +363,8 @@ main {
   border-top: 1px solid var(--line);
 }
 
-.delete-student-panel label {
+.delete-student-panel label,
+.admin-user-panel span {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
@@ -375,7 +377,15 @@ main {
   gap: 8px;
 }
 
-.delete-student-controls input {
+.admin-user-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  gap: 8px;
+}
+
+.delete-student-controls input,
+.admin-user-controls input,
+.admin-user-controls select {
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--line);
@@ -1392,6 +1402,10 @@ progress::-webkit-progress-value {
   }
 
   .delete-student-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-user-controls {
     grid-template-columns: 1fr;
   }
 

@@ -85,6 +85,17 @@
             <button id="deleteStudentButton" class="danger-button" type="button">Deaktiver elev</button>
             <p id="deleteStudentMessage" class="delete-student-message" aria-live="polite"></p>
           </div>
+          <div id="adminUserPanel" class="admin-user-panel admin-only hidden">
+            <span>Admin</span>
+            <strong>Endre brukernavn</strong>
+            <small>Gjelder navnet brukeren vises med i appen.</small>
+            <div class="admin-user-controls">
+              <select id="adminUserSelect" aria-label="Velg bruker"></select>
+              <input id="adminUserNameInput" placeholder="Nytt brukernavn" />
+              <button id="adminRenameUserButton" class="secondary-button" type="button">Lagre navn</button>
+            </div>
+            <p id="adminRenameMessage" class="delete-student-message" aria-live="polite"></p>
+          </div>
         </section>
 
         <section id="dashboardView" class="view active-view">
@@ -470,6 +481,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=49"></script>
+    <script type="module" src="supabase-sync.js?v=50"></script>
   </body>
 </html>

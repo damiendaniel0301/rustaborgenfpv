@@ -4,7 +4,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   display_name text,
-  role text not null default 'student' check (role in ('student', 'instructor')),
+  role text not null default 'student' check (role in ('student', 'instructor', 'admin')),
   created_at timestamptz not null default now()
 );
 
@@ -26,13 +26,32 @@ as $$
     select 1
     from public.profiles
     where id = auth.uid()
-      and role = 'instructor'
+      and role in ('instructor', 'admin')
   );
 $$;
 
 revoke all on function public.is_instructor() from public;
 revoke execute on function public.is_instructor() from anon;
 grant execute on function public.is_instructor() to authenticated;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and role = 'admin'
+  );
+$$;
+
+revoke all on function public.is_admin() from public;
+revoke execute on function public.is_admin() from anon;
+grant execute on function public.is_admin() to authenticated;
 
 create policy "profiles read own"
   on public.profiles
@@ -172,7 +191,7 @@ begin
   from public.profiles
   where id = caller;
 
-  if caller_role = 'instructor' then
+  if caller_role in ('instructor', 'admin') then
     insert into public.drone_app_state (id, data, updated_at)
     values (state_id, new_data, now())
     on conflict (id) do update
@@ -252,7 +271,7 @@ begin
     return null;
   end if;
 
-  if caller_role = 'instructor' then
+  if caller_role in ('instructor', 'admin') then
     return current_data;
   end if;
 
@@ -285,6 +304,86 @@ revoke execute on function public.redeem_instructor_invite(text) from anon;
 grant execute on function public.redeem_instructor_invite(text) to authenticated;
 grant execute on function public.save_drone_app_state(text, jsonb) to authenticated;
 grant execute on function public.get_drone_app_state(text) to authenticated;
+
+create or replace function public.admin_update_profile_display_name(target_user_id uuid, new_display_name text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  clean_name text := btrim(new_display_name);
+  updated_profile public.profiles%rowtype;
+begin
+  if auth.uid() is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  if not (select public.is_admin()) then
+    raise exception 'Admin access required';
+  end if;
+
+  if target_user_id is null then
+    raise exception 'Missing target user';
+  end if;
+
+  if clean_name is null or length(clean_name) < 1 then
+    raise exception 'Name cannot be empty';
+  end if;
+
+  update public.profiles
+  set display_name = clean_name
+  where id = target_user_id
+  returning * into updated_profile;
+
+  if not found then
+    raise exception 'User not found';
+  end if;
+
+  update public.drone_app_state s
+  set data = jsonb_set(
+      jsonb_set(
+        s.data,
+        '{students}',
+        coalesce((
+          select jsonb_agg(
+            case
+              when item->>'id' = target_user_id::text then jsonb_set(item, '{name}', to_jsonb(clean_name), true)
+              else item
+            end
+            order by ordinality
+          )
+          from jsonb_array_elements(coalesce(s.data->'students', '[]'::jsonb)) with ordinality as arr(item, ordinality)
+        ), '[]'::jsonb),
+        true
+      ),
+      '{instructors}',
+      coalesce((
+        select jsonb_agg(
+          case
+            when item->>'id' = target_user_id::text then jsonb_set(item, '{name}', to_jsonb(clean_name), true)
+            else item
+          end
+          order by ordinality
+        )
+        from jsonb_array_elements(coalesce(s.data->'instructors', '[]'::jsonb)) with ordinality as arr(item, ordinality)
+      ), '[]'::jsonb),
+      true
+    ),
+    updated_at = now();
+
+  return jsonb_build_object(
+    'id', updated_profile.id,
+    'email', updated_profile.email,
+    'display_name', updated_profile.display_name,
+    'role', updated_profile.role
+  );
+end;
+$$;
+
+revoke all on function public.admin_update_profile_display_name(uuid, text) from public;
+revoke execute on function public.admin_update_profile_display_name(uuid, text) from anon;
+grant execute on function public.admin_update_profile_display_name(uuid, text) to authenticated;
 
 -- Lag en instruktør-invitasjon med en kode du velger:
 -- insert into public.instructor_invites (label, code_hash)

@@ -54,11 +54,24 @@ function userName(profile = authProfile) {
 }
 
 function userRole(profile = authProfile) {
-  return profile?.role === "instructor" ? "instructor" : "student";
+  if (profile?.role === "admin") return "admin";
+  if (profile?.role === "instructor") return "instructor";
+  return "student";
+}
+
+function isInstructorRole(role = userRole()) {
+  return role === "instructor" || role === "admin";
+}
+
+function isAdminRole(role = userRole()) {
+  return role === "admin";
 }
 
 function userRoleLabel(profile = authProfile) {
-  return userRole(profile) === "instructor" ? "Instruktør" : "Elev";
+  const role = userRole(profile);
+  if (role === "admin") return "Admin / Instruktør";
+  if (role === "instructor") return "Instruktør";
+  return "Elev";
 }
 
 function appUserFromProfile(profile = authProfile) {
@@ -78,10 +91,11 @@ function ensureProfileInSharedData(sharedData, profile = authProfile) {
   };
   const appUser = appUserFromProfile(profile);
 
-  if (appUser.role === "instructor") {
+  if (isInstructorRole(appUser.role)) {
     const instructorIndex = next.instructors.findIndex((item) => item.id === appUser.id);
     if (instructorIndex >= 0) next.instructors[instructorIndex] = appUser;
     else next.instructors.push(appUser);
+    next.students = next.students.filter((student) => student.id !== appUser.id);
     return next;
   }
 
@@ -109,10 +123,11 @@ function mergeProfilesIntoSharedData(sharedData, profiles = []) {
 
   profiles.forEach((profile) => {
     const appUser = appUserFromProfile(profile);
-    if (appUser.role === "instructor") {
+    if (isInstructorRole(appUser.role)) {
       const instructorIndex = next.instructors.findIndex((item) => item.id === appUser.id);
       if (instructorIndex >= 0) next.instructors[instructorIndex] = appUser;
       else next.instructors.push(appUser);
+      next.students = next.students.filter((student) => student.id !== appUser.id);
       return;
     }
 
@@ -135,7 +150,7 @@ function applyAuthState(sharedData = {}) {
   const localState = readLocalState();
   const appUser = appUserFromProfile();
   const mergedShared = ensureProfileInSharedData(sharedData);
-  const selectedStudentId = appUser.role === "instructor"
+  const selectedStudentId = isInstructorRole(appUser.role)
     ? localState.selectedStudentId || mergedShared.students[0]?.id || "gjest"
     : appUser.id;
 
@@ -305,7 +320,7 @@ async function ensureProfile(user) {
 }
 
 async function fetchProfilesForRoster() {
-  if (userRole() !== "instructor") return [];
+  if (!isInstructorRole()) return [];
 
   const { data, error } = await client
     .from("profiles")
@@ -342,7 +357,7 @@ async function pushSharedData(rawState) {
     return;
   }
 
-  if (userRole() === "instructor") {
+  if (isInstructorRole()) {
     const currentIds = new Set((parsed.students || []).map((student) => student.id));
     const deletedIds = new Set(Array.isArray(parsed.deletedStudentIds) ? parsed.deletedStudentIds : []);
     lastKnownStudentIds.forEach((studentId) => {
@@ -479,16 +494,51 @@ async function redeemInstructorInvite() {
   window.location.reload();
 }
 
+window.droneflyverAdminRenameUser = async (targetUserId, newName) => {
+  if (!client || !authProfile || !isAdminRole()) {
+    throw new Error("Admin-rettigheter kreves.");
+  }
+
+  const cleanName = String(newName || "").trim();
+  if (!targetUserId || !cleanName) {
+    throw new Error("Velg bruker og skriv nytt navn.");
+  }
+
+  const { data, error } = await client.rpc("admin_update_profile_display_name", {
+    target_user_id: targetUserId,
+    new_display_name: cleanName
+  });
+
+  if (error) {
+    throw new Error(error.message || "Kunne ikke endre brukernavn.");
+  }
+
+  const remoteData = await fetchRemoteSharedData();
+  const profileRoster = await fetchProfilesForRoster();
+  const sharedData = ensureProfileInSharedData(mergeProfilesIntoSharedData(remoteData || sharedDataFromState(readLocalState()), profileRoster));
+  applyAuthState(sharedData);
+  lastRemoteSnapshot = snapshot(sharedData);
+  window.DRONEFLYVER_AUTH_STATE = {
+    user: appUserFromProfile(),
+    sharedData
+  };
+
+  return data;
+};
+
 function enforceAuthRoleView(authState = window.DRONEFLYVER_AUTH_STATE) {
   const user = authState?.user;
   if (!user) return;
 
   document.querySelector("#currentUser").textContent = user.name;
-  document.querySelector("#currentRole").textContent = user.role === "instructor" ? "Instruktør" : "Elev";
-  document.querySelectorAll(".instructor-only").forEach((item) => item.classList.toggle("hidden", user.role !== "instructor"));
-  document.querySelectorAll(".student-only").forEach((item) => item.classList.toggle("hidden", user.role === "instructor"));
+  const instructorAccess = isInstructorRole(user.role);
+  const adminAccess = isAdminRole(user.role);
+  document.querySelector("#currentRole").textContent = user.role === "admin" ? "Admin / Instruktør" : user.role === "instructor" ? "Instruktør" : "Elev";
+  document.querySelectorAll(".instructor-only").forEach((item) => item.classList.toggle("hidden", !instructorAccess));
+  document.querySelectorAll(".admin-only").forEach((item) => item.classList.toggle("hidden", !adminAccess));
+  document.querySelectorAll(".student-only").forEach((item) => item.classList.toggle("hidden", instructorAccess));
 
-  if (user.role !== "instructor") return;
+  if (!instructorAccess) return;
 
   const reviewView = document.querySelector("#reviewView");
   if (!reviewView) return;
@@ -535,7 +585,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=49");
+  await import("./app.js?v=50");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();

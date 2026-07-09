@@ -177,6 +177,7 @@ let flightLogSortDirection = "desc";
 let flightLogDroneFilter = "all";
 let flightLogModeFilter = "all";
 let flightLogMissionFilter = "all";
+let adminRenameSelectedUserId = "";
 
 const views = {
   dashboard: document.querySelector("#dashboardView"),
@@ -268,7 +269,8 @@ function normalizeInstructors(instructors = []) {
   return Array.isArray(instructors)
     ? instructors.map((instructor) => ({
         id: instructor.id || studentIdFromName(instructor.name),
-        name: instructor.name || "Instruktør"
+        name: instructor.name || "Instruktør",
+        role: instructor.role === "admin" ? "admin" : "instructor"
       }))
     : [];
 }
@@ -323,7 +325,7 @@ function studentIdFromName(name = "Gjest") {
 }
 
 function activeStudentId(appState = state) {
-  return appState.user.role === "instructor" ? appState.selectedStudentId : appState.currentStudentId;
+  return isInstructorRole(appState.user.role) ? appState.selectedStudentId : appState.currentStudentId;
 }
 
 function flightLogOwnerId(appState = state) {
@@ -583,6 +585,20 @@ function dateCompact(date = todayString()) {
   return date.replaceAll("-", "");
 }
 
+function isInstructorRole(role = activeRole) {
+  return role === "instructor" || role === "admin";
+}
+
+function isAdminRole(role = activeRole) {
+  return role === "admin";
+}
+
+function roleLabel(role = "student") {
+  if (role === "admin") return "admin";
+  if (role === "instructor") return "instruktør";
+  return "elev";
+}
+
 function flightLogsForActiveStudent() {
   const ownerId = flightLogOwnerId();
   return state.flightLogs.filter((log) => log.ownerId === ownerId);
@@ -591,7 +607,7 @@ function flightLogsForActiveStudent() {
 function flightLogUsers() {
   const users = [
     state.user.id ? { id: state.user.id, name: state.user.name, role: state.user.role } : null,
-    ...state.instructors.map((instructor) => ({ ...instructor, role: "instructor" })),
+    ...state.instructors.map((instructor) => ({ ...instructor, role: instructor.role || "instructor" })),
     ...state.students.map((student) => ({ id: student.id, name: student.name, role: "student" }))
   ].filter((user) => user?.id && user.id !== "gjest");
 
@@ -605,7 +621,7 @@ function selectedFlightLogUser() {
   const users = flightLogUsers();
   const fallback = users.find((user) => user.id === state.user.id) || users[0] || { id: flightLogOwnerId(), name: state.user.name };
 
-  if (state.user.role !== "instructor") {
+  if (!isInstructorRole(state.user.role)) {
     selectedFlightLogUserId = fallback.id;
     return fallback;
   }
@@ -1046,7 +1062,7 @@ function renderFlightLogUserSelect() {
   const users = flightLogUsers();
   const selected = selectedFlightLogUser();
   select.innerHTML = users
-    .map((user) => `<option value="${escapeHtml(user.id)}">${escapeHtml(user.name)} (${user.role === "instructor" ? "instruktør" : "elev"})</option>`)
+    .map((user) => `<option value="${escapeHtml(user.id)}">${escapeHtml(user.name)} (${roleLabel(user.role)})</option>`)
     .join("");
   select.value = selected.id;
 }
@@ -1442,6 +1458,62 @@ function renderStudentTabs() {
   } else if (deleteMessage && !deleteMessage.dataset.locked) {
     deleteMessage.textContent = "";
   }
+
+  renderAdminUserPanel();
+}
+
+function adminEditableUsers() {
+  return flightLogUsers()
+    .filter((user) => user.id !== "gjest")
+    .sort((a, b) => a.name.localeCompare(b.name, "no"));
+}
+
+function renderAdminUserPanel() {
+  const panel = document.querySelector("#adminUserPanel");
+  const select = document.querySelector("#adminUserSelect");
+  const input = document.querySelector("#adminUserNameInput");
+  const message = document.querySelector("#adminRenameMessage");
+  if (!panel || !select || !input) return;
+
+  const canAdmin = isAdminRole(state.user.role);
+  panel.classList.toggle("hidden", !canAdmin);
+  if (!canAdmin) return;
+
+  const users = adminEditableUsers();
+  const button = document.querySelector("#adminRenameUserButton");
+  if (!users.length) {
+    select.innerHTML = "";
+    input.value = "";
+    input.disabled = true;
+    if (button) button.disabled = true;
+    if (message && !message.dataset.locked) message.textContent = "Ingen brukere å endre.";
+    return;
+  }
+
+  if (!users.some((user) => user.id === adminRenameSelectedUserId)) {
+    adminRenameSelectedUserId = users[0].id;
+  }
+
+  select.innerHTML = users
+    .map((user) => `<option value="${escapeHtml(user.id)}">${escapeHtml(user.name)} (${roleLabel(user.role)})</option>`)
+    .join("");
+  select.value = adminRenameSelectedUserId;
+
+  const selected = users.find((user) => user.id === adminRenameSelectedUserId) || users[0];
+  input.disabled = false;
+  if (button) button.disabled = false;
+  if (!input.dataset.dirty) input.value = selected.name;
+  if (message && !message.dataset.locked) message.textContent = "";
+}
+
+function applyRenamedUser(userId, newName) {
+  if (state.user.id === userId) state.user.name = newName;
+
+  const student = state.students.find((item) => item.id === userId);
+  if (student) student.name = newName;
+
+  const instructor = state.instructors.find((item) => item.id === userId);
+  if (instructor) instructor.name = newName;
 }
 
 function renderLogin() {
@@ -1457,10 +1529,12 @@ function studentProgressPercent(student, stepKey) {
 }
 
 function renderRole() {
-  const isInstructor = activeRole === "instructor";
-  document.querySelectorAll(".instructor-only").forEach((item) => item.classList.toggle("hidden", !isInstructor));
-  document.querySelectorAll(".student-only").forEach((item) => item.classList.toggle("hidden", isInstructor));
-  document.querySelector("#currentRole").textContent = isInstructor ? "Instruktør" : "Elev";
+  const instructorAccess = isInstructorRole(activeRole);
+  const adminAccess = isAdminRole(activeRole);
+  document.querySelectorAll(".instructor-only").forEach((item) => item.classList.toggle("hidden", !instructorAccess));
+  document.querySelectorAll(".admin-only").forEach((item) => item.classList.toggle("hidden", !adminAccess));
+  document.querySelectorAll(".student-only").forEach((item) => item.classList.toggle("hidden", instructorAccess));
+  document.querySelector("#currentRole").textContent = activeRole === "admin" ? "Admin / Instruktør" : activeRole === "instructor" ? "Instruktør" : "Elev";
 }
 
 function render() {
@@ -1503,7 +1577,7 @@ window.droneflyverApplyAuthState = (authState = window.DRONEFLYVER_AUTH_STATE) =
   loadActiveStudentProgress();
   saveState();
   render();
-  if (state.user.role === "instructor") setView("review");
+  if (isInstructorRole(state.user.role)) setView("review");
 };
 
 document.querySelectorAll(".nav-button").forEach((button) => {
@@ -1539,6 +1613,56 @@ document.querySelector("#deleteStudentButton")?.addEventListener("click", () => 
   message.textContent = `${selectedStudent.name} er deaktivert og skjult fra elevlisten.`;
   saveState();
   render();
+});
+
+document.querySelector("#adminUserSelect")?.addEventListener("change", (event) => {
+  adminRenameSelectedUserId = event.target.value;
+  const input = document.querySelector("#adminUserNameInput");
+  const selected = adminEditableUsers().find((user) => user.id === adminRenameSelectedUserId);
+  if (input && selected) {
+    input.dataset.dirty = "";
+    input.value = selected.name;
+  }
+  const message = document.querySelector("#adminRenameMessage");
+  if (message) {
+    message.dataset.locked = "";
+    message.textContent = "";
+  }
+});
+
+document.querySelector("#adminUserNameInput")?.addEventListener("input", (event) => {
+  event.target.dataset.dirty = "true";
+});
+
+document.querySelector("#adminRenameUserButton")?.addEventListener("click", async () => {
+  const input = document.querySelector("#adminUserNameInput");
+  const message = document.querySelector("#adminRenameMessage");
+  const newName = input?.value.trim() || "";
+
+  if (message) {
+    message.dataset.locked = "true";
+    message.textContent = "Lagrer nytt navn...";
+  }
+
+  try {
+    if (!window.droneflyverAdminRenameUser) {
+      throw new Error("Admin-funksjon er ikke tilgjengelig.");
+    }
+    await window.droneflyverAdminRenameUser(adminRenameSelectedUserId, newName);
+    applyRenamedUser(adminRenameSelectedUserId, newName);
+    if (input) input.dataset.dirty = "";
+    saveState();
+    render();
+    if (message) {
+      message.dataset.locked = "true";
+      message.textContent = `Brukernavn endret til ${newName}.`;
+    }
+  } catch (error) {
+    if (message) {
+      message.dataset.locked = "true";
+      message.textContent = error.message || "Kunne ikke endre brukernavn.";
+    }
+  }
 });
 
 document.querySelector("#continueButton").addEventListener("click", () => {
