@@ -233,6 +233,10 @@ async function signIn() {
 
 async function signUp() {
   const { name, email, password } = authValues();
+  if (/\s+\S/.test(name)) {
+    setLoginMessage("Kun ett navn tillat av sikkerhetshensyn, bruk kun fornavn");
+    return;
+  }
   if (!name || !email || password.length < 6) {
     setLoginMessage("Skriv kun fornavn, e-post og passord på minst 6 tegn.");
     return;
@@ -531,7 +535,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=48");
+  await import("./app.js?v=49");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
