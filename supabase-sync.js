@@ -189,8 +189,9 @@ function renderAuthForm() {
   panel.innerHTML = `
     <h2>Innlogging</h2>
     <div class="secure-auth-panel">
-      <label for="authName">Navn</label>
-      <input id="authName" autocomplete="name" placeholder="Navn ved ny bruker" />
+      <label for="authName">Fornavn</label>
+      <input id="authName" autocomplete="given-name" placeholder="Kun fornavn ved ny bruker" />
+      <p class="auth-help">Legg kun inn fornavn i appen. Ikke skriv etternavn eller fullt navn.</p>
       <label for="authEmail">E-post</label>
       <input id="authEmail" type="email" autocomplete="email" placeholder="din@epost.no" />
       <label for="authPassword">Passord</label>
@@ -233,7 +234,7 @@ async function signIn() {
 async function signUp() {
   const { name, email, password } = authValues();
   if (!name || !email || password.length < 6) {
-    setLoginMessage("Skriv navn, e-post og passord på minst 6 tegn.");
+    setLoginMessage("Skriv kun fornavn, e-post og passord på minst 6 tegn.");
     return;
   }
 
@@ -530,7 +531,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=47");
+  await import("./app.js?v=48");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();

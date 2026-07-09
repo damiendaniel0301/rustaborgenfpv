@@ -180,6 +180,14 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
+.auth-help {
+  margin: -4px 0 2px;
+  color: #d8e5f3;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .secure-hidden {
   display: none !important;
 }
