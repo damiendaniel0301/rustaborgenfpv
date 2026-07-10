@@ -12,6 +12,25 @@
     <link rel="icon" href="assets/droneflyver-icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/droneflyver-icon.svg" />
     <link rel="stylesheet" href="styles.css" />
+    <script>
+      (() => {
+        const appVersion = "55";
+        const versionKey = "droneflyver-client-version";
+        if (localStorage.getItem(versionKey) === appVersion) return;
+        localStorage.setItem(versionKey, appVersion);
+
+        const cacheCleanup = "caches" in window
+          ? caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("droneflyver-")).map((key) => caches.delete(key))))
+          : Promise.resolve();
+        const workerCleanup = "serviceWorker" in navigator
+          ? navigator.serviceWorker.getRegistrations().then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+          : Promise.resolve();
+
+        Promise.all([cacheCleanup, workerCleanup]).then(() => {
+          if (navigator.serviceWorker?.controller) window.location.reload();
+        });
+      })();
+    </script>
   </head>
   <body>
     <div class="app-shell">
@@ -487,6 +506,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=54"></script>
+    <script type="module" src="supabase-sync.js?v=55"></script>
   </body>
 </html>

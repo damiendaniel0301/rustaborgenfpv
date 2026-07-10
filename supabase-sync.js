@@ -98,6 +98,10 @@ function appUserFromProfile(profile = authProfile) {
   };
 }
 
+function realStudentCount(sharedData = {}) {
+  return (sharedData.students || []).filter((student) => student.id !== "gjest").length;
+}
+
 function ensureProfileInSharedData(sharedData, profile = authProfile) {
   const next = {
     students: Array.isArray(sharedData?.students) ? [...sharedData.students] : [],
@@ -353,6 +357,14 @@ async function fetchProfilesForRoster() {
   if (!isInstructorRole()) return [];
 
   const { data, error } = await client.rpc("get_profiles_for_roster");
+  if (error) {
+    const fallback = await client
+      .from("profiles")
+      .select("id,email,display_name,role")
+      .order("created_at", { ascending: true });
+
+    if (!fallback.error) return Array.isArray(fallback.data) ? fallback.data : [];
+  }
 
   if (error) {
     setStatus("Kunne ikke hente elevliste", true);
@@ -516,6 +528,13 @@ function renderSignedInIdentity(authState = window.DRONEFLYVER_AUTH_STATE) {
   }
 }
 
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
 async function redeemInstructorInvite() {
   const input = document.querySelector("#instructorInviteCode");
   const inviteCode = input?.value.trim();
@@ -630,17 +649,18 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=54");
+  await import("./app.js?v=55");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
-  setStatus("Synkronisert");
+  setStatus(`Synkronisert - ${realStudentCount(sharedData)} elever`);
 
   window.addEventListener("focus", refreshFromRemote);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) refreshFromRemote();
   });
   window.setInterval(refreshFromRemote, remoteRefreshIntervalMs);
+  registerServiceWorker();
 }
 
 bootAuthenticatedApp();
