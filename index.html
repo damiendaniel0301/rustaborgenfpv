@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="styles.css" />
     <script>
       (() => {
-        const appVersion = "63";
+        const appVersion = "64";
         const versionKey = "droneflyver-client-version";
         window.DRONEFLYVER_APP_VERSION = appVersion;
         window.droneflyverReportStatus = (message, isError = false) => {
@@ -90,7 +90,7 @@
           <span>Innlogget som</span>
           <strong id="currentUser">Ikke innlogget</strong>
           <small id="currentRole">Logg inn for å bruke appen</small>
-          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v63 - venter på Supabase</p>
+          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v64 - venter på Supabase</p>
           <button
             id="accountLogoutButton"
             class="secondary-button full-button"
@@ -530,6 +530,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=63"></script>
+    <script type="module" src="supabase-sync.js?v=64"></script>
   </body>
 </html>

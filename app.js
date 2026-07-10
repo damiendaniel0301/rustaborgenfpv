@@ -1654,7 +1654,7 @@ document.querySelector("#reviewStepSelect").addEventListener("change", (event) =
   renderReview();
 });
 
-document.querySelector("#deleteStudentButton")?.addEventListener("click", () => {
+document.querySelector("#deleteStudentButton")?.addEventListener("click", async () => {
   const selectedStudent = activeStudent();
   const message = document.querySelector("#deleteStudentMessage");
 
@@ -1667,6 +1667,17 @@ document.querySelector("#deleteStudentButton")?.addEventListener("click", () => 
 
   const confirmed = window.confirm(`Deaktiver ${selectedStudent.name}? Eleven skjules fra instruktørlisten, men Supabase-kontoen slettes ikke.`);
   if (!confirmed) return;
+
+  try {
+    message.textContent = `Deaktiverer ${selectedStudent.name}...`;
+    if (!window.droneflyverDeactivateStudent) {
+      throw new Error("Supabase-deaktivering er ikke klar. Oppdater siden og prøv igjen.");
+    }
+    await window.droneflyverDeactivateStudent(selectedStudent.id, "Deaktivert fra appen av instruktør/admin");
+  } catch (error) {
+    message.textContent = error.message || "Kunne ikke deaktivere elev.";
+    return;
+  }
 
   state.deletedStudentIds = [...new Set([...(state.deletedStudentIds || []), selectedStudent.id])];
   state.students = state.students.filter((student) => student.id !== selectedStudent.id);

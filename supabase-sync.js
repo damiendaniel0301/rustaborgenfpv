@@ -683,6 +683,41 @@ window.droneflyverAdminRenameUser = async (targetUserId, newName) => {
   return data;
 };
 
+window.droneflyverDeactivateStudent = async (targetStudentId, note = "") => {
+  if (!client || !authProfile || !isInstructorRole()) {
+    throw new Error("Instruktør- eller adminrettigheter kreves.");
+  }
+
+  if (!targetStudentId) {
+    throw new Error("Velg elev som skal deaktiveres.");
+  }
+
+  const { data, error } = await client.rpc("deactivate_student_profile", {
+    target_student_id: targetStudentId,
+    deactivate_note: note
+  });
+
+  if (error) {
+    throw new Error(error.message || "Kunne ikke deaktivere elev.");
+  }
+
+  if (data !== true) {
+    throw new Error("Fant ikke aktiv elev å deaktivere.");
+  }
+
+  const remoteData = await fetchRemoteSharedData();
+  const profileRoster = await fetchProfilesForRoster();
+  const sharedData = ensureProfileInSharedData(mergeProfilesIntoSharedData(remoteData || sharedDataFromState(readLocalState()), profileRoster));
+  applyAuthState(sharedData);
+  lastRemoteSnapshot = snapshot(sharedData);
+  window.DRONEFLYVER_AUTH_STATE = {
+    user: appUserFromProfile(),
+    sharedData
+  };
+
+  return true;
+};
+
 function enforceAuthRoleView(authState = window.DRONEFLYVER_AUTH_STATE) {
   const user = authState?.user;
   if (!user) return;
@@ -745,7 +780,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=63");
+  await import("./app.js?v=64");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
