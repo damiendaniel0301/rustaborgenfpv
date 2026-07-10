@@ -191,13 +191,31 @@ const views = {
 
 function loadState() {
   const raw = localStorage.getItem("droneflyt-state");
-  if (!raw) return structuredClone(defaultState);
+  if (!raw) return normalizeState(applyAuthUserOverride(structuredClone(defaultState)));
 
   try {
-    return normalizeState({ ...structuredClone(defaultState), ...JSON.parse(raw) });
+    return normalizeState(applyAuthUserOverride({ ...structuredClone(defaultState), ...JSON.parse(raw) }));
   } catch {
-    return structuredClone(defaultState);
+    return normalizeState(applyAuthUserOverride(structuredClone(defaultState)));
   }
+}
+
+function applyAuthUserOverride(savedState) {
+  const authUser = window.DRONEFLYVER_AUTH_STATE?.user;
+  if (!authUser?.id) return savedState;
+
+  savedState.user = {
+    id: authUser.id,
+    name: authUser.name || savedState.user?.name || "Bruker",
+    role: authUser.role || savedState.user?.role || "student"
+  };
+
+  if (savedState.user.role === "student") {
+    savedState.currentStudentId = savedState.user.id;
+    savedState.selectedStudentId = savedState.user.id;
+  }
+
+  return savedState;
 }
 
 function normalizeState(savedState) {

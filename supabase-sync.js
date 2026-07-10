@@ -486,6 +486,16 @@ function renderSecureAccountPanel() {
   document.querySelector("#redeemInstructorInviteButton")?.addEventListener("click", redeemInstructorInvite);
 }
 
+function renderSignedInIdentity(authState = window.DRONEFLYVER_AUTH_STATE) {
+  const user = authState?.user || appUserFromProfile();
+  const currentUser = document.querySelector("#currentUser");
+  const currentRole = document.querySelector("#currentRole");
+  if (currentUser) currentUser.textContent = user.name || userName();
+  if (currentRole) {
+    currentRole.textContent = user.role === "admin" ? "Admin / Instruktør" : user.role === "instructor" ? "Instruktør" : "Elev";
+  }
+}
+
 async function redeemInstructorInvite() {
   const input = document.querySelector("#instructorInviteCode");
   const inviteCode = input?.value.trim();
@@ -594,12 +604,13 @@ async function bootAuthenticatedApp() {
     sharedData
   };
   window.DRONEFLYVER_AUTH_STATE = authState;
+  renderSignedInIdentity(authState);
   applyAuthState(sharedData);
   lastRemoteSnapshot = snapshot(sharedData);
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=51");
+  await import("./app.js?v=52");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
