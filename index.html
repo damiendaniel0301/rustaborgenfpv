@@ -14,8 +14,25 @@
     <link rel="stylesheet" href="styles.css" />
     <script>
       (() => {
-        const appVersion = "55";
+        const appVersion = "56";
         const versionKey = "droneflyver-client-version";
+        window.DRONEFLYVER_APP_VERSION = appVersion;
+        window.droneflyverReportStatus = (message, isError = false) => {
+          const update = () => {
+            document.querySelectorAll(".sync-status").forEach((target) => {
+              target.textContent = message;
+              target.classList.toggle("sync-error", Boolean(isError));
+            });
+          };
+          if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", update, { once: true });
+          else update();
+        };
+        window.addEventListener("error", (event) => {
+          window.droneflyverReportStatus(`Appfeil: ${event.message || "ukjent feil"}`, true);
+        });
+        window.addEventListener("unhandledrejection", (event) => {
+          window.droneflyverReportStatus(`Appfeil: ${event.reason?.message || event.reason || "ukjent feil"}`, true);
+        });
         if (localStorage.getItem(versionKey) === appVersion) return;
         localStorage.setItem(versionKey, appVersion);
 
@@ -73,6 +90,7 @@
           <span>Innlogget som</span>
           <strong id="currentUser">Ikke innlogget</strong>
           <small id="currentRole">Logg inn for å bruke appen</small>
+          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v56 - venter på Supabase</p>
           <button
             id="accountLogoutButton"
             class="secondary-button full-button"
@@ -506,6 +524,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=55"></script>
+    <script type="module" src="supabase-sync.js?v=56"></script>
   </body>
 </html>

@@ -19,6 +19,7 @@ let lastPushHadError = false;
 let lastKnownStudentIds = new Set();
 
 window.droneflyverHasUnsavedWork = window.droneflyverHasUnsavedWork || (() => false);
+window.droneflyverReportStatus?.(`Supabase-script startet v${window.DRONEFLYVER_APP_VERSION || "ukjent"}`);
 
 async function clearAuthAndReload() {
   try {
@@ -202,10 +203,14 @@ function applyAuthState(sharedData = {}) {
 }
 
 function setStatus(message, isError = false) {
-  const target = document.querySelector("#syncStatus");
-  if (!target) return;
-  target.textContent = message;
-  target.classList.toggle("sync-error", isError);
+  if (window.droneflyverReportStatus) {
+    window.droneflyverReportStatus(message, isError);
+    return;
+  }
+  document.querySelectorAll(".sync-status").forEach((target) => {
+    target.textContent = message;
+    target.classList.toggle("sync-error", isError);
+  });
 }
 
 function setLoginMessage(message) {
@@ -649,7 +654,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=55");
+  await import("./app.js?v=56");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
