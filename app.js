@@ -252,8 +252,9 @@ function applySharedState(sharedData = {}) {
   loadActiveStudentProgress();
 }
 
-function normalizeTasks(tasks, length) {
-  return Array.from({ length }, (_, index) => Boolean(tasks[index]));
+function normalizeTasks(tasks = [], length) {
+  const source = Array.isArray(tasks) ? tasks : [];
+  return Array.from({ length }, (_, index) => Boolean(source[index]));
 }
 
 function normalizeStudents(savedState) {
