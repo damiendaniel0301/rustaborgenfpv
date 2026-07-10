@@ -103,6 +103,14 @@ function realStudentCount(sharedData = {}) {
   return (sharedData.students || []).filter((student) => student.id !== "gjest").length;
 }
 
+function removeDeletedStudents(sharedData = {}) {
+  const deletedIds = new Set(Array.isArray(sharedData.deletedStudentIds) ? sharedData.deletedStudentIds : []);
+  return {
+    ...sharedData,
+    students: (Array.isArray(sharedData.students) ? sharedData.students : []).filter((student) => student?.id === "gjest" || !deletedIds.has(student?.id))
+  };
+}
+
 function ensureProfileInSharedData(sharedData, profile = authProfile) {
   const next = {
     students: Array.isArray(sharedData?.students) ? [...sharedData.students] : [],
@@ -117,10 +125,10 @@ function ensureProfileInSharedData(sharedData, profile = authProfile) {
     if (instructorIndex >= 0) next.instructors[instructorIndex] = appUser;
     else next.instructors.push(appUser);
     next.students = next.students.filter((student) => student.id !== appUser.id);
-    return next;
+    return removeDeletedStudents(next);
   }
 
-  if (next.deletedStudentIds.includes(appUser.id)) return next;
+  if (next.deletedStudentIds.includes(appUser.id)) return removeDeletedStudents(next);
 
   const studentIndex = next.students.findIndex((item) => item.id === appUser.id);
   if (studentIndex >= 0) {
@@ -131,7 +139,7 @@ function ensureProfileInSharedData(sharedData, profile = authProfile) {
   } else {
     next.students.push({ id: appUser.id, name: appUser.name });
   }
-  return next;
+  return removeDeletedStudents(next);
 }
 
 function mergeProfilesIntoSharedData(sharedData, profiles = []) {
@@ -165,7 +173,7 @@ function mergeProfilesIntoSharedData(sharedData, profiles = []) {
     }
   });
 
-  return next;
+  return removeDeletedStudents(next);
 }
 
 function mergeStudentsPreservingRemote(localStudents = [], remoteStudents = []) {
@@ -654,7 +662,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=58");
+  await import("./app.js?v=59");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();

@@ -36,6 +36,7 @@ const defaultState = {
   instructors: [],
   students: [{ id: "gjest", name: "Gjest", ...blankProgress() }],
   flightLogs: [],
+  deletedStudentIds: [],
   ...blankProgress()
 };
 
@@ -226,6 +227,7 @@ function normalizeState(savedState) {
   savedState.students = normalizeStudents(savedState);
   savedState.instructors = normalizeInstructors(savedState.instructors);
   savedState.flightLogs = normalizeFlightLogs(savedState.flightLogs);
+  savedState.deletedStudentIds = Array.isArray(savedState.deletedStudentIds) ? savedState.deletedStudentIds : [];
   savedState.currentStudentId = savedState.currentStudentId || studentIdFromName(savedState.user.name);
   savedState.selectedStudentId = savedState.selectedStudentId || savedState.currentStudentId;
   loadActiveStudentProgress(savedState);
@@ -239,6 +241,7 @@ function applySharedState(sharedData = {}) {
   });
   state.instructors = normalizeInstructors(sharedData.instructors);
   state.flightLogs = normalizeFlightLogs(sharedData.flightLogs);
+  state.deletedStudentIds = Array.isArray(sharedData.deletedStudentIds) ? sharedData.deletedStudentIds : [];
 
   if (!state.students.some((student) => student.id === state.currentStudentId)) {
     state.currentStudentId = "gjest";
@@ -1657,6 +1660,7 @@ document.querySelector("#deleteStudentButton")?.addEventListener("click", () => 
   const confirmed = window.confirm(`Deaktiver ${selectedStudent.name}? Eleven skjules fra instruktørlisten, men Supabase-kontoen slettes ikke.`);
   if (!confirmed) return;
 
+  state.deletedStudentIds = [...new Set([...(state.deletedStudentIds || []), selectedStudent.id])];
   state.students = state.students.filter((student) => student.id !== selectedStudent.id);
   const nextStudent = state.students.find((student) => student.id !== "gjest") || state.students[0];
   state.selectedStudentId = nextStudent?.id || "gjest";
