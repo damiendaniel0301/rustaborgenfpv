@@ -70,6 +70,15 @@ function userName(profile = authProfile) {
   return profile?.display_name || profile?.email || "Bruker";
 }
 
+function escapeHtml(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function userRole(profile = authProfile) {
   if (profile?.role === "admin") return "admin";
   if (profile?.role === "instructor") return "instructor";
@@ -583,8 +592,8 @@ function renderSecureAccountPanel() {
   account.className = "secure-auth-panel";
   account.innerHTML = `
     <span class="secure-label">Pålogget med Supabase</span>
-    <strong>${userName()}</strong>
-    <small>${authProfile.email} - ${userRoleLabel()}</small>
+    <strong>${escapeHtml(userName())}</strong>
+    <small>${escapeHtml(authProfile.email)} - ${escapeHtml(userRoleLabel())}</small>
     ${userRole() === "student" ? `
       <div class="instructor-upgrade">
         <label for="instructorInviteCode">Instruktør-invitasjonskode</label>
@@ -736,7 +745,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=62");
+  await import("./app.js?v=63");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();

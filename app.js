@@ -1411,7 +1411,7 @@ function renderReview() {
           <div>
             <span>Steg 1 - Simulator</span>
             <h3>${exercise.title}</h3>
-            <p>Elev: ${selectedStudent.name}</p>
+            <p>Elev: ${escapeHtml(selectedStudent.name)}</p>
             <p>${exercise.requirement}</p>
             <p>Bruk drone: Racewhoop 2.5" · Bruk kamera vinkel 10 grader</p>
             <p>Status: ${exerciseStatusText(saved.status)}</p>
@@ -1439,7 +1439,7 @@ function renderReview() {
       <article class="review-card">
         <div>
           <span>Steg 2 - Tinywhoop</span>
-          <h3>${selectedStudent.name}</h3>
+          <h3>${escapeHtml(selectedStudent.name)}</h3>
           <p>Status: ${examText(tinywhoop, "step2")}</p>
           <p>Registreres etter praktisk vurdering med instruktør.</p>
           <p>Eksamensflyvning krever normalt fysisk at instruktør ser på. Etter avtale med instruktør kan eksamensflyvning gjøres gjennom video der eleven viser de ferdigheter og kontroll som kreves.</p>
@@ -1475,8 +1475,8 @@ function renderStudentTabs() {
     .map((student) => {
       const progress = Math.round((studentProgressPercent(student, "step1") + studentProgressPercent(student, "step2")) / 2);
       return `
-        <button class="student-tab ${student.id === selectedId ? "active" : ""}" type="button" data-select-student="${student.id}">
-          <strong>${student.name}</strong>
+        <button class="student-tab ${student.id === selectedId ? "active" : ""}" type="button" data-select-student="${escapeHtml(student.id)}">
+          <strong>${escapeHtml(student.name)}</strong>
           <span>${progress}%</span>
         </button>
       `;
