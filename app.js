@@ -244,8 +244,9 @@ function applySharedState(sharedData = {}) {
     state.currentStudentId = "gjest";
   }
 
-  if (!state.students.some((student) => student.id === state.selectedStudentId)) {
-    state.selectedStudentId = state.currentStudentId || "gjest";
+  const firstRealStudentId = state.students.find((student) => student.id !== "gjest")?.id || state.students[0]?.id || "gjest";
+  if (!state.students.some((student) => student.id === state.selectedStudentId) || (state.selectedStudentId === "gjest" && firstRealStudentId !== "gjest")) {
+    state.selectedStudentId = isInstructorRole(state.user.role) ? firstRealStudentId : state.currentStudentId || "gjest";
   }
 
   loadActiveStudentProgress();
@@ -1454,8 +1455,11 @@ function renderStudentTabs() {
   const selectedStudent = activeStudent();
   const deleteButton = document.querySelector("#deleteStudentButton");
   const deleteMessage = document.querySelector("#deleteStudentMessage");
+  const visibleStudents = state.students.some((student) => student.id !== "gjest")
+    ? state.students.filter((student) => student.id !== "gjest")
+    : state.students;
 
-  list.innerHTML = state.students
+  list.innerHTML = visibleStudents
     .map((student) => {
       const progress = Math.round((studentProgressPercent(student, "step1") + studentProgressPercent(student, "step2")) / 2);
       return `

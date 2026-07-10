@@ -385,6 +385,29 @@ revoke all on function public.admin_update_profile_display_name(uuid, text) from
 revoke execute on function public.admin_update_profile_display_name(uuid, text) from anon;
 grant execute on function public.admin_update_profile_display_name(uuid, text) to authenticated;
 
+create or replace function public.get_profiles_for_roster()
+returns table (
+  id uuid,
+  email text,
+  display_name text,
+  role text,
+  created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select p.id, p.email, p.display_name, p.role, p.created_at
+  from public.profiles p
+  where public.is_instructor()
+  order by p.created_at;
+$$;
+
+revoke all on function public.get_profiles_for_roster() from public;
+revoke execute on function public.get_profiles_for_roster() from anon;
+grant execute on function public.get_profiles_for_roster() to authenticated;
+
 -- Lag en instruktør-invitasjon med en kode du velger:
 -- insert into public.instructor_invites (label, code_hash)
 -- values ('Instruktørkode Daniel', crypt('SKRIV-DIN-KODE-HER', gen_salt('bf')));

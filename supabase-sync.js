@@ -166,14 +166,16 @@ function applyAuthState(sharedData = {}) {
   const localState = readLocalState();
   const appUser = appUserFromProfile();
   const mergedShared = ensureProfileInSharedData(sharedData);
+  const firstRealStudentId = mergedShared.students.find((student) => student.id !== "gjest")?.id || mergedShared.students[0]?.id || "gjest";
+  const localSelectedStudentExists = mergedShared.students.some((student) => student.id === localState.selectedStudentId);
   const selectedStudentId = isInstructorRole(appUser.role)
-    ? localState.selectedStudentId || mergedShared.students[0]?.id || "gjest"
+    ? (localSelectedStudentExists && localState.selectedStudentId !== "gjest" ? localState.selectedStudentId : firstRealStudentId)
     : appUser.id;
 
   writeLocalState({
     ...localState,
     user: appUser,
-    currentStudentId: appUser.role === "student" ? appUser.id : localState.currentStudentId || "gjest",
+    currentStudentId: appUser.role === "student" ? appUser.id : localState.currentStudentId || firstRealStudentId,
     selectedStudentId,
     students: mergedShared.students,
     instructors: mergedShared.instructors,
@@ -338,10 +340,7 @@ async function ensureProfile(user) {
 async function fetchProfilesForRoster() {
   if (!isInstructorRole()) return [];
 
-  const { data, error } = await client
-    .from("profiles")
-    .select("id,email,display_name,role")
-    .order("created_at", { ascending: true });
+  const { data, error } = await client.rpc("get_profiles_for_roster");
 
   if (error) {
     setStatus("Kunne ikke hente elevliste", true);
@@ -610,7 +609,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=52");
+  await import("./app.js?v=53");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
