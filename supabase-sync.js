@@ -421,6 +421,15 @@ async function ensureProfile(user) {
   return inserted.data;
 }
 
+async function reactivateOwnStudentProfileIfNeeded(profile) {
+  if (profile?.role !== "student") return;
+
+  const { error } = await client.rpc("reactivate_own_student_profile");
+  if (error) {
+    setStatus("Kunne ikke reaktivere elevkonto", true);
+  }
+}
+
 async function fetchProfilesForRoster() {
   if (!isInstructorRole()) return [];
 
@@ -711,6 +720,7 @@ async function bootAuthenticatedApp() {
     setLoginMessage("Fant ikke brukerprofil.");
     return;
   }
+  await reactivateOwnStudentProfileIfNeeded(authProfile);
 
   const remoteData = await fetchRemoteSharedData();
   const profileRoster = await fetchProfilesForRoster();
@@ -726,7 +736,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=61");
+  await import("./app.js?v=62");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();

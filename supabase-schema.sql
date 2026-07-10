@@ -305,6 +305,44 @@ grant execute on function public.redeem_instructor_invite(text) to authenticated
 grant execute on function public.save_drone_app_state(text, jsonb) to authenticated;
 grant execute on function public.get_drone_app_state(text) to authenticated;
 
+create or replace function public.reactivate_own_student_profile()
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  caller uuid := auth.uid();
+  caller_role text;
+begin
+  if caller is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  select role into caller_role
+  from public.profiles
+  where id = caller;
+
+  if caller_role <> 'student' then
+    return false;
+  end if;
+
+  update public.student_access_status
+  set deactivated_at = null,
+      deactivated_by = null,
+      note = 'Reaktivert ved ny innlogging med samme e-post',
+      updated_at = now()
+  where student_id = caller
+    and deactivated_at is not null;
+
+  return true;
+end;
+$$;
+
+revoke all on function public.reactivate_own_student_profile() from public;
+revoke execute on function public.reactivate_own_student_profile() from anon;
+grant execute on function public.reactivate_own_student_profile() to authenticated;
+
 create or replace function public.admin_update_profile_display_name(target_user_id uuid, new_display_name text)
 returns jsonb
 language plpgsql
@@ -400,7 +438,9 @@ set search_path = public
 as $$
   select p.id, p.email, p.display_name, p.role, p.created_at
   from public.profiles p
+  left join public.student_access_status access on access.student_id = p.id
   where public.is_instructor()
+    and (p.role <> 'student' or access.deactivated_at is null)
   order by p.created_at;
 $$;
 
