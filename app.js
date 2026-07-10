@@ -1591,8 +1591,9 @@ window.droneflyverApplyAuthState = (authState = window.DRONEFLYVER_AUTH_STATE) =
     state.currentStudentId = state.user.id;
     state.selectedStudentId = state.user.id;
   } else {
-    if (!state.students.some((student) => student.id === state.selectedStudentId)) {
-      state.selectedStudentId = state.students[0]?.id || "gjest";
+    const firstRealStudentId = state.students.find((student) => student.id !== "gjest")?.id || state.students[0]?.id || "gjest";
+    if (!state.students.some((student) => student.id === state.selectedStudentId) || (state.selectedStudentId === "gjest" && firstRealStudentId !== "gjest")) {
+      state.selectedStudentId = firstRealStudentId;
     }
   }
 
