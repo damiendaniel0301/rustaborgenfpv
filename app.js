@@ -179,6 +179,8 @@ let flightLogDroneFilter = "all";
 let flightLogModeFilter = "all";
 let flightLogMissionFilter = "all";
 let adminRenameSelectedUserId = "";
+let installPromptEvent = null;
+let deviceMode = detectDeviceMode();
 
 const views = {
   dashboard: document.querySelector("#dashboardView"),
@@ -253,6 +255,91 @@ function applySharedState(sharedData = {}) {
   }
 
   loadActiveStudentProgress();
+}
+
+function detectDeviceMode() {
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches || false;
+  const narrowScreen = window.matchMedia?.("(max-width: 820px)")?.matches || window.innerWidth <= 820;
+  const mobileAgent = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const touchDevice = (navigator.maxTouchPoints || 0) > 1;
+  return (narrowScreen && (coarsePointer || touchDevice)) || mobileAgent ? "mobile" : "desktop";
+}
+
+function applyDeviceMode() {
+  deviceMode = detectDeviceMode();
+  const isMobile = deviceMode === "mobile";
+  document.body.classList.toggle("device-mobile", isMobile);
+  document.body.classList.toggle("device-desktop", !isMobile);
+  document.body.dataset.deviceMode = deviceMode;
+
+  const mobileStart = document.querySelector("#flightLogMobileStart");
+  const badge = document.querySelector("#deviceModeBadge");
+  if (mobileStart) mobileStart.classList.toggle("hidden", !isMobile);
+  if (badge) badge.textContent = isMobile ? "Mobilmodus" : "PC-visning";
+}
+
+function groupFlightLogFormForSteps() {
+  const form = document.querySelector("#flightLogForm");
+  if (!form || form.dataset.stepped === "true") return;
+
+  const groups = [
+    { title: "1. Sortie", selectors: ["#flightDate", "#sortieNo", "#operatorPilot", "#missionType"] },
+    { title: "2. Tid og sted", selectors: ["#takeoffTime", "#landingTime", "#flightTimeMinutes", "#flightLocation"] },
+    { title: "3. Drone og hendelser", selectors: ["#droneAirframe", "#flightMode", "#batteryPackInput", "#coreEventOptions"] },
+    { title: "4. Merknader", selectors: ["#weather", "#issuesIncidents", "#maintenanceRequired", "#flightRemarks"] }
+  ];
+
+  groups.forEach(({ title, selectors }) => {
+    const section = document.createElement("fieldset");
+    section.className = "flight-log-step-section";
+    const legend = document.createElement("legend");
+    legend.textContent = title;
+    section.append(legend);
+
+    selectors.forEach((selector) => {
+      const element = document.querySelector(selector);
+      const row = element?.closest(".form-row, .core-event-fieldset");
+      if (row && row.parentElement === form) section.append(row);
+    });
+
+    const actions = document.querySelector(".flight-log-actions");
+    if (title.startsWith("4.") && actions?.parentElement === form) {
+      actions.classList.add("sticky-save-bar");
+      section.append(actions);
+    }
+
+    form.append(section);
+  });
+
+  form.dataset.stepped = "true";
+}
+
+function setupFlightLogMobileShell() {
+  applyDeviceMode();
+  groupFlightLogFormForSteps();
+
+  document.querySelector("#newSortieButton")?.addEventListener("click", () => {
+    flightLogSummaryVisible = false;
+    resetFlightLogForm();
+    setView("flightLog");
+    document.querySelector("#flightLogForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  window.addEventListener("resize", applyDeviceMode);
+  window.addEventListener("orientationchange", applyDeviceMode);
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    installPromptEvent = event;
+    if (deviceMode === "mobile") document.querySelector("#installPwaButton")?.classList.remove("hidden");
+  });
+
+  document.querySelector("#installPwaButton")?.addEventListener("click", async () => {
+    if (!installPromptEvent) return;
+    installPromptEvent.prompt();
+    await installPromptEvent.userChoice;
+    installPromptEvent = null;
+    document.querySelector("#installPwaButton")?.classList.add("hidden");
+  });
 }
 
 function normalizeTasks(tasks = [], length) {
@@ -1845,6 +1932,8 @@ document.querySelector("#flightDate")?.addEventListener("change", (event) => {
   });
 });
 
+setupFlightLogMobileShell();
+
 document.body.addEventListener("click", (event) => {
   const check = event.target.closest(".check-button");
   const videoButton = event.target.closest("[data-video]");
@@ -2006,3 +2095,4 @@ document.querySelector("#resetDemo").addEventListener("click", () => {
 });
 
 render();
+if (deviceMode === "mobile") setView("flightLog");

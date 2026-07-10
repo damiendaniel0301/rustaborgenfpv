@@ -999,6 +999,50 @@ progress::-webkit-progress-value {
   line-height: 1.45;
 }
 
+.flight-log-mobile-start {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid #bfd4e8;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef7ff 100%);
+  box-shadow: var(--shadow-soft);
+}
+
+.flight-log-mobile-start h3 {
+  margin: 8px 0 4px;
+}
+
+.flight-log-mobile-start p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.device-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--blue-strong);
+  background: #dceeff;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.mobile-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .flight-log-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -1024,8 +1068,26 @@ progress::-webkit-progress-value {
 
 .form-row.wide,
 .core-event-fieldset,
-.flight-log-actions {
+.flight-log-actions,
+.flight-log-step-section {
   grid-column: 1 / -1;
+}
+
+.flight-log-step-section {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfdff;
+}
+
+.flight-log-step-section > legend {
+  padding: 0 8px;
+  color: var(--blue-strong);
+  font-weight: 900;
 }
 
 .form-row label,
@@ -1465,6 +1527,82 @@ progress::-webkit-progress-value {
 
   .flight-log-form {
     grid-template-columns: 1fr;
+  }
+
+  .device-mobile main {
+    padding: 12px;
+  }
+
+  .device-mobile #flightLogView {
+    margin-inline: -4px;
+  }
+
+  .device-mobile .flight-log-mobile-start {
+    display: grid;
+    grid-template-columns: 1fr;
+    border-radius: 10px;
+  }
+
+  .device-mobile .mobile-start-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .device-mobile .mobile-start-actions button {
+    width: 100%;
+    min-height: 52px;
+    font-size: 16px;
+  }
+
+  .device-mobile .flight-log-form {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .device-mobile .flight-log-step-section {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    border-radius: 10px;
+    background: var(--panel);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .device-mobile .core-event-card {
+    display: none;
+  }
+
+  .device-mobile .sticky-save-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 8;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0 -16px -16px;
+    padding: 12px;
+    border-top: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 -10px 24px rgba(22, 35, 52, 0.1);
+  }
+
+  .device-mobile .sticky-save-bar button {
+    min-height: 52px;
+  }
+
+  .device-mobile .flight-log-table-wrap {
+    margin-top: 18px;
+  }
+
+  .device-mobile .flight-log-report-panel {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .device-mobile .flight-log-card {
+    gap: 12px;
+    padding: 14px;
+    border-radius: 10px;
   }
 
   .side-nav {
