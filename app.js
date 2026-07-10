@@ -1482,7 +1482,37 @@ function renderStudentTabs() {
     deleteMessage.textContent = "";
   }
 
+  renderAdminInstructorPanel();
   renderAdminUserPanel();
+}
+
+function renderAdminInstructorPanel() {
+  const panel = document.querySelector("#adminInstructorPanel");
+  const list = document.querySelector("#adminInstructorList");
+  if (!panel || !list) return;
+
+  const canAdmin = isAdminRole(state.user.role);
+  panel.classList.toggle("hidden", !canAdmin);
+  if (!canAdmin) return;
+
+  const instructors = [
+    ...state.instructors,
+    ...(state.user.id && isInstructorRole(state.user.role) ? [state.user] : [])
+  ]
+    .filter((instructor) => instructor?.id)
+    .filter((instructor, index, items) => items.findIndex((item) => item.id === instructor.id) === index)
+    .sort((a, b) => a.name.localeCompare(b.name, "no"));
+
+  list.innerHTML = instructors.length
+    ? instructors
+        .map((instructor) => `
+          <div class="admin-instructor-item">
+            <strong>${escapeHtml(instructor.name)}</strong>
+            <span>${instructor.role === "admin" ? "Admin / instruktør" : "Instruktør"}</span>
+          </div>
+        `)
+        .join("")
+    : `<p class="delete-student-message">Ingen instruktører funnet.</p>`;
 }
 
 function adminEditableUsers() {

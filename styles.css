@@ -355,7 +355,8 @@ main {
 }
 
 .delete-student-panel,
-.admin-user-panel {
+.admin-user-panel,
+.admin-instructor-panel {
   display: grid;
   flex-basis: 100%;
   gap: 8px;
@@ -364,11 +365,36 @@ main {
 }
 
 .delete-student-panel label,
-.admin-user-panel span {
+.admin-user-panel span,
+.admin-instructor-panel span {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.admin-instructor-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-instructor-item {
+  display: grid;
+  gap: 2px;
+  min-width: 170px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.admin-instructor-item strong {
+  margin: 0;
+}
+
+.admin-instructor-item span {
+  text-transform: none;
 }
 
 .delete-student-controls {
