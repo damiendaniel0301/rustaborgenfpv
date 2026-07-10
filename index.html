@@ -54,6 +54,12 @@
           <span>Innlogget som</span>
           <strong id="currentUser">Gjest</strong>
           <small id="currentRole">Elev</small>
+          <button
+            id="accountLogoutButton"
+            class="secondary-button full-button"
+            type="button"
+            onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload();"
+          >Logg ut / bytt bruker</button>
         </div>
 
         <footer class="creator-credit">
@@ -481,6 +487,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=50"></script>
+    <script type="module" src="supabase-sync.js?v=51"></script>
   </body>
 </html>

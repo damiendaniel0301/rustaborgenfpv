@@ -20,6 +20,22 @@ let lastKnownStudentIds = new Set();
 
 window.droneflyverHasUnsavedWork = window.droneflyverHasUnsavedWork || (() => false);
 
+async function clearAuthAndReload() {
+  try {
+    if (client) await client.auth.signOut();
+  } catch {
+    // Continue with local cleanup even if Supabase is unavailable.
+  }
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.reload();
+}
+
+document.querySelector("#accountLogoutButton")?.addEventListener("click", (event) => {
+  event.preventDefault();
+  clearAuthAndReload();
+});
+
 function readLocalState() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -464,9 +480,7 @@ function renderSecureAccountPanel() {
   panel.insertBefore(account, document.querySelector("#syncStatus"));
 
   document.querySelector("#secureLogoutButton")?.addEventListener("click", async () => {
-    await client.auth.signOut();
-    localStorage.removeItem(STORAGE_KEY);
-    window.location.reload();
+    await clearAuthAndReload();
   });
 
   document.querySelector("#redeemInstructorInviteButton")?.addEventListener("click", redeemInstructorInvite);
@@ -585,7 +599,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=50");
+  await import("./app.js?v=51");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
