@@ -55,6 +55,8 @@ const coreEventCodes = [
   ["MNT", "Vedlikehold kreves"]
 ];
 
+const standardBatteryPacks = Array.from({ length: 8 }, (_, index) => `BAT-${String(index + 1).padStart(2, "0")}`);
+
 const lessons = {
   step1: [
     {
@@ -285,7 +287,7 @@ function groupFlightLogFormForSteps() {
   const groups = [
     { title: "1. Sortie", selectors: ["#flightDate", "#sortieNo", "#operatorPilot", "#missionType"] },
     { title: "2. Tid og sted", selectors: ["#takeoffTime", "#landingTime", "#flightTimeMinutes", "#flightLocation"] },
-    { title: "3. Drone og hendelser", selectors: ["#droneAirframe", "#flightMode", "#batteryPackInput", "#coreEventOptions"] },
+    { title: "3. Drone og hendelser", selectors: ["#droneAirframe", "#flightMode", "#batteryPackOptions", "#coreEventOptions"] },
     { title: "4. Merknader", selectors: ["#weather", "#issuesIncidents", "#maintenanceRequired", "#flightRemarks"] }
   ];
 
@@ -1010,15 +1012,40 @@ function setFlightLogFormDirty(isDirty) {
 
 function batteryPackNosFromForm() {
   const hiddenValue = document.querySelector("#batteryPackNo")?.value || "";
-  const typedValue = document.querySelector("#batteryPackInput")?.value || "";
-  return normalizeBatteryPackNos({ batteryPackNo: `${hiddenValue},${typedValue}` });
+  const checkedValues = [...document.querySelectorAll("#batteryPackOptions input:checked")].map((input) => input.value);
+  return normalizeBatteryPackNos({ batteryPackNos: [...normalizeBatteryPackNos({ batteryPackNo: hiddenValue }), ...checkedValues] });
+}
+
+function sortBatteryPackNos(packs = []) {
+  const order = new Map(standardBatteryPacks.map((pack, index) => [pack, index]));
+  return [...packs].sort((a, b) => {
+    const first = order.has(a) ? order.get(a) : Number.MAX_SAFE_INTEGER;
+    const second = order.has(b) ? order.get(b) : Number.MAX_SAFE_INTEGER;
+    return first === second ? a.localeCompare(b) : first - second;
+  });
+}
+
+function renderBatteryPackOptions(packs = batteryPackNosFromForm()) {
+  const options = document.querySelector("#batteryPackOptions");
+  if (!options) return;
+
+  const selected = new Set(packs);
+  options.innerHTML = standardBatteryPacks
+    .map((pack) => `
+      <label class="battery-pack-option">
+        <input type="checkbox" value="${pack}" ${selected.has(pack) ? "checked" : ""} />
+        <span>${pack}</span>
+      </label>
+    `)
+    .join("");
 }
 
 function setBatteryPackNos(values = []) {
-  const packs = normalizeBatteryPackNos({ batteryPackNos: values });
+  const packs = sortBatteryPackNos(normalizeBatteryPackNos({ batteryPackNos: values }));
   const hidden = document.querySelector("#batteryPackNo");
   const list = document.querySelector("#batteryPackList");
   if (hidden) hidden.value = packs.join(", ");
+  renderBatteryPackOptions(packs);
   if (!list) return;
 
   list.innerHTML = packs.length
@@ -1031,16 +1058,6 @@ function setBatteryPackNos(values = []) {
     : `<span class="battery-pack-empty">Ingen batterier lagt til</span>`;
 }
 
-function addBatteryPackFromInput() {
-  const input = document.querySelector("#batteryPackInput");
-  if (!input) return;
-
-  const packs = batteryPackNosFromForm();
-  setBatteryPackNos(packs);
-  input.value = "";
-  setFlightLogFormDirty(true);
-}
-
 function resetFlightLogForm() {
   const form = document.querySelector("#flightLogForm");
   if (!form) return;
@@ -1051,7 +1068,6 @@ function resetFlightLogForm() {
   document.querySelector("#flightDate").value = date;
   document.querySelector("#sortieNo").value = generateSortieNumber(date);
   document.querySelector("#operatorPilot").value = state.user.name === "Gjest" ? "" : state.user.name;
-  document.querySelector("#batteryPackInput").value = "";
   setBatteryPackNos([]);
   setFlightLogFormDirty(false);
 }
@@ -1101,7 +1117,6 @@ function populateFlightLogForm(log) {
   document.querySelector("#takeoffTime").value = log.takeoffTime;
   document.querySelector("#landingTime").value = log.landingTime;
   document.querySelector("#flightTimeMinutes").value = log.flightTimeMinutes || "";
-  document.querySelector("#batteryPackInput").value = "";
   setBatteryPackNos(normalizeBatteryPackNos(log));
   document.querySelector("#weather").value = log.weather;
   document.querySelector("#flightMode").value = log.flightMode;
@@ -1858,12 +1873,10 @@ document.querySelector("#flightLogForm")?.addEventListener("submit", (event) => 
 
 document.querySelector("#clearFlightLogForm")?.addEventListener("click", resetFlightLogForm);
 
-document.querySelector("#addBatteryPackNo")?.addEventListener("click", addBatteryPackFromInput);
-
-document.querySelector("#batteryPackInput")?.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter") return;
-  event.preventDefault();
-  addBatteryPackFromInput();
+document.querySelector("#batteryPackOptions")?.addEventListener("change", (event) => {
+  if (!(event.target instanceof HTMLInputElement) || event.target.type !== "checkbox") return;
+  setBatteryPackNos([...document.querySelectorAll("#batteryPackOptions input:checked")].map((input) => input.value));
+  setFlightLogFormDirty(true);
 });
 
 document.querySelector("#flightLogForm")?.addEventListener("input", () => {

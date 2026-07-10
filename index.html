@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="styles.css" />
     <script>
       (() => {
-        const appVersion = "66";
+        const appVersion = "67";
         const versionKey = "droneflyver-client-version";
         window.DRONEFLYVER_APP_VERSION = appVersion;
         window.droneflyverReportStatus = (message, isError = false) => {
@@ -90,7 +90,7 @@
           <span>Innlogget som</span>
           <strong id="currentUser">Ikke innlogget</strong>
           <small id="currentRole">Logg inn for å bruke appen</small>
-          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v66 - venter på Supabase</p>
+          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v67 - venter på Supabase</p>
           <button
             id="accountLogoutButton"
             class="secondary-button full-button"
@@ -426,11 +426,8 @@
                 <input id="flightTimeMinutes" type="number" min="0" step="0.1" placeholder="Minutter" />
               </div>
               <div class="form-row wide battery-pack-row">
-                <label for="batteryPackInput">Battery / pack no.</label>
-                <div class="battery-pack-entry">
-                  <input id="batteryPackInput" placeholder="BAT-01" />
-                  <button id="addBatteryPackNo" class="secondary-button" type="button">Legg til</button>
-                </div>
+                <label>Battery / pack no.</label>
+                <div id="batteryPackOptions" class="battery-pack-options" role="group" aria-label="Battery / pack no."></div>
                 <input id="batteryPackNo" type="hidden" />
                 <div id="batteryPackList" class="battery-pack-list"></div>
               </div>
@@ -542,6 +539,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=66"></script>
+    <script type="module" src="supabase-sync.js?v=67"></script>
   </body>
 </html>
