@@ -259,6 +259,7 @@ function renderAuthForm() {
       <label for="authPassword">Passord</label>
       <input id="authPassword" type="password" autocomplete="current-password" placeholder="Minst 6 tegn" />
       <button id="authLoginButton" class="primary-button" type="button">Logg inn</button>
+      <button id="authResetPasswordButton" class="secondary-button" type="button">Send nytt passord</button>
       <button id="authSignupButton" class="secondary-button" type="button">Lag elevbruker</button>
       <p id="loginMessage" class="login-message" aria-live="polite"></p>
       <p id="syncStatus" class="sync-status" aria-live="polite">Sikker innlogging</p>
@@ -266,6 +267,7 @@ function renderAuthForm() {
   `;
 
   document.querySelector("#authLoginButton").addEventListener("click", signIn);
+  document.querySelector("#authResetPasswordButton").addEventListener("click", sendPasswordReset);
   document.querySelector("#authSignupButton").addEventListener("click", signUp);
 }
 
@@ -287,10 +289,63 @@ async function signIn() {
   setLoginMessage("Logger inn...");
   const { error } = await client.auth.signInWithPassword({ email, password });
   if (error) {
-    setLoginMessage("Innlogging feilet. Sjekk e-post og passord.");
+    setLoginMessage(`Innlogging feilet: ${error.message}. Sjekk e-post, eller bruk "Send nytt passord".`);
     return;
   }
   window.location.reload();
+}
+
+async function sendPasswordReset() {
+  const { email } = authValues();
+  if (!email) {
+    setLoginMessage("Skriv e-postadressen først.");
+    return;
+  }
+
+  setLoginMessage("Sender lenke for nytt passord...");
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}${window.location.pathname}?resetPassword=1`
+  });
+
+  if (error) {
+    setLoginMessage(`Kunne ikke sende nytt passord: ${error.message}`);
+    return;
+  }
+
+  setLoginMessage("Sjekk e-post for lenke til nytt passord.");
+}
+
+async function completePasswordRecoveryIfNeeded() {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const searchParams = new URLSearchParams(window.location.search);
+  const isRecovery = hashParams.get("type") === "recovery" || searchParams.get("type") === "recovery" || searchParams.get("resetPassword") === "1";
+  if (!isRecovery) return;
+
+  const code = searchParams.get("code");
+  if (code) {
+    const { error } = await client.auth.exchangeCodeForSession(code);
+    if (error) {
+      setLoginMessage(`Kunne ikke åpne passordlenke: ${error.message}`);
+      return;
+    }
+  }
+
+  const newPassword = window.prompt("Skriv nytt passord for Droneflyver. Minst 6 tegn.");
+  if (!newPassword) return;
+
+  if (newPassword.length < 6) {
+    setLoginMessage("Passord må være minst 6 tegn.");
+    return;
+  }
+
+  const { error } = await client.auth.updateUser({ password: newPassword });
+  if (error) {
+    setLoginMessage(`Kunne ikke oppdatere passord: ${error.message}`);
+    return;
+  }
+
+  window.history.replaceState({}, document.title, window.location.pathname);
+  setLoginMessage("Passord er oppdatert. Du kan logge inn.");
 }
 
 async function signUp() {
@@ -642,6 +697,7 @@ async function bootAuthenticatedApp() {
     return;
   }
 
+  await completePasswordRecoveryIfNeeded();
   const { data: sessionData } = await client.auth.getSession();
   const session = sessionData.session;
   if (!session) {
@@ -670,7 +726,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=60");
+  await import("./app.js?v=61");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
