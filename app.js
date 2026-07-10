@@ -235,13 +235,13 @@ function normalizeState(savedState) {
 }
 
 function applySharedState(sharedData = {}) {
+  state.deletedStudentIds = Array.isArray(sharedData.deletedStudentIds) ? sharedData.deletedStudentIds : [];
   state.students = normalizeStudents({
     ...state,
-    students: sharedData.students
+    students: filterDeletedStudents(sharedData.students, state.deletedStudentIds)
   });
   state.instructors = normalizeInstructors(sharedData.instructors);
   state.flightLogs = normalizeFlightLogs(sharedData.flightLogs);
-  state.deletedStudentIds = Array.isArray(sharedData.deletedStudentIds) ? sharedData.deletedStudentIds : [];
 
   if (!state.students.some((student) => student.id === state.currentStudentId)) {
     state.currentStudentId = "gjest";
@@ -261,6 +261,7 @@ function normalizeTasks(tasks = [], length) {
 }
 
 function normalizeStudents(savedState) {
+  const deletedIds = new Set(Array.isArray(savedState.deletedStudentIds) ? savedState.deletedStudentIds : []);
   const source = Array.isArray(savedState.students) && savedState.students.length
     ? savedState.students
     : [{
@@ -270,7 +271,14 @@ function normalizeStudents(savedState) {
         step2: savedState.step2
       }];
 
-  return source.map((student) => normalizeStudent(student));
+  return filterDeletedStudents(source, deletedIds).map((student) => normalizeStudent(student));
+}
+
+function filterDeletedStudents(students = [], deletedStudentIds = []) {
+  const deletedIds = deletedStudentIds instanceof Set
+    ? deletedStudentIds
+    : new Set(Array.isArray(deletedStudentIds) ? deletedStudentIds : []);
+  return (Array.isArray(students) ? students : []).filter((student) => student?.id === "gjest" || !deletedIds.has(student?.id));
 }
 
 function normalizeStudent(student) {

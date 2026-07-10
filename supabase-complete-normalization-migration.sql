@@ -52,8 +52,9 @@ begin
   from public.profiles
   where id = caller;
 
-  if caller_role = 'instructor' then
+  if caller_role in ('instructor', 'admin') then
     perform public.upsert_normalized_app_state_from_json(new_data);
+    perform public.upsert_flight_logs_from_json(new_data);
     return public.get_normalized_app_state(state_id);
   end if;
 
@@ -62,11 +63,11 @@ begin
   where value->>'id' = caller::text
   limit 1;
 
-  if caller_student is null then
-    raise exception 'Student record missing';
+  if caller_student is not null then
+    perform public.upsert_normalized_app_state_from_json(jsonb_build_object('students', jsonb_build_array(caller_student)));
   end if;
 
-  perform public.upsert_normalized_app_state_from_json(jsonb_build_object('students', jsonb_build_array(caller_student)));
+  perform public.upsert_flight_logs_from_json(new_data);
   return public.get_normalized_app_state(state_id);
 end;
 $$;

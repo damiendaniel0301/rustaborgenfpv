@@ -424,9 +424,17 @@ async function pushSharedData(rawState) {
   let sharedData = sharedDataFromState(parsed);
   if (isInstructorRole()) {
     const remoteData = await fetchRemoteSharedData();
+    if (remoteData) {
+      const deletedIds = new Set([
+        ...(Array.isArray(sharedData.deletedStudentIds) ? sharedData.deletedStudentIds : []),
+        ...(Array.isArray(remoteData.deletedStudentIds) ? remoteData.deletedStudentIds : [])
+      ]);
+      sharedData.deletedStudentIds = [...deletedIds];
+    }
     if (remoteData?.students?.length) {
       sharedData.students = mergeStudentsPreservingRemote(sharedData.students, remoteData.students);
     }
+    sharedData = removeDeletedStudents(sharedData);
     const profileRoster = await fetchProfilesForRoster();
     sharedData = mergeProfilesIntoSharedData(sharedData, profileRoster);
   }
@@ -662,7 +670,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=59");
+  await import("./app.js?v=60");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
