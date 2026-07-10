@@ -464,7 +464,7 @@ function setView(viewName) {
     certification: "Steg 3: Kurs og sertifisering",
     military: "Steg 4: Militært typekurs",
     review: "Vurdering",
-    flightLog: "Fly log"
+    flightLog: "Flylogg"
   };
   document.querySelector("#viewTitle").textContent = titles[viewName];
 }
@@ -1036,12 +1036,17 @@ function renderFlightLog() {
   const user = selectedFlightLogUser();
   const list = document.querySelector("#flightLogList");
   const count = document.querySelector("#flightLogCount");
+  const summaryButton = document.querySelector("#summarizeFlightLogButton");
   if (!list || !count) return;
 
   renderFlightLogUserSelect();
   renderFlightLogFilters(baseLogs);
   renderFlightLogSortControls();
   renderFlightLogSummary();
+  list.classList.toggle("hidden", flightLogSummaryVisible);
+  if (summaryButton) {
+    summaryButton.textContent = flightLogSummaryVisible ? "Hovedvisning" : "Oppsummer flylogg";
+  }
   const filterSuffix = activeFlightLogFilterLabel() === "Ingen filter" ? "" : " (filtrert)";
   count.textContent = `${logs.length} ${logs.length === 1 ? "flyvning" : "flyvninger"} - ${user.name}${filterSuffix}`;
 
@@ -1813,8 +1818,8 @@ document.querySelector("#flightLogSortDirection")?.addEventListener("change", (e
 });
 
 document.querySelector("#summarizeFlightLogButton")?.addEventListener("click", () => {
-  flightLogSummaryVisible = true;
-  renderFlightLogSummary();
+  flightLogSummaryVisible = !flightLogSummaryVisible;
+  renderFlightLog();
 });
 
 document.querySelector("#exportFlightLogExcelButton")?.addEventListener("click", exportSelectedFlightLogToExcel);

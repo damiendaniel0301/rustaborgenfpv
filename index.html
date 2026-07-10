@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="styles.css" />
     <script>
       (() => {
-        const appVersion = "64";
+        const appVersion = "65";
         const versionKey = "droneflyver-client-version";
         window.DRONEFLYVER_APP_VERSION = appVersion;
         window.droneflyverReportStatus = (message, isError = false) => {
@@ -83,14 +83,14 @@
           <button class="nav-button" type="button" data-view="certification">Steg 3 - Kurs og sertifisering</button>
           <button class="nav-button" type="button" data-view="military">Steg 4 - Militært typekurs</button>
           <button class="nav-button instructor-only" type="button" data-view="review">Vurdering</button>
-          <button class="nav-button nav-bottom-link" type="button" data-view="flightLog">Fly log</button>
+          <button class="nav-button nav-bottom-link" type="button" data-view="flightLog">Flylogg</button>
         </nav>
 
         <div class="account-card">
           <span>Innlogget som</span>
           <strong id="currentUser">Ikke innlogget</strong>
           <small id="currentRole">Logg inn for å bruke appen</small>
-          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v64 - venter på Supabase</p>
+          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v65 - venter på Supabase</p>
           <button
             id="accountLogoutButton"
             class="secondary-button full-button"
@@ -357,7 +357,7 @@
           <div class="section-heading">
             <div>
               <p class="eyebrow">Operativ logg</p>
-              <h2>Fly log</h2>
+              <h2>Flylogg</h2>
               <p class="review-help">Før sortie-nummer, flytid, pilot, drone, sted, core events og merknader etter hver flyvning.</p>
             </div>
           </div>
@@ -530,6 +530,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=64"></script>
+    <script type="module" src="supabase-sync.js?v=65"></script>
   </body>
 </html>
