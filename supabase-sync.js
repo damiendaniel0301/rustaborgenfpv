@@ -622,13 +622,6 @@ function renderSignedInIdentity(authState = window.DRONEFLYVER_AUTH_STATE) {
   }
 }
 
-function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) return;
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
-  });
-}
-
 async function redeemInstructorInvite() {
   const input = document.querySelector("#instructorInviteCode");
   const inviteCode = input?.value.trim();
@@ -780,7 +773,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=67");
+  await import("./app.js?v=68");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
@@ -791,7 +784,6 @@ async function bootAuthenticatedApp() {
     if (!document.hidden) refreshFromRemote();
   });
   window.setInterval(refreshFromRemote, remoteRefreshIntervalMs);
-  registerServiceWorker();
 }
 
 bootAuthenticatedApp();

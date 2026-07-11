@@ -8,13 +8,12 @@
     <meta name="apple-mobile-web-app-title" content="Veien til FPV" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>Veien til FPV</title>
-    <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="assets/droneflyver-icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/droneflyver-icon.svg" />
     <link rel="stylesheet" href="styles.css" />
     <script>
       (() => {
-        const appVersion = "67";
+        const appVersion = "68";
         const versionKey = "droneflyver-client-version";
         window.DRONEFLYVER_APP_VERSION = appVersion;
         window.droneflyverReportStatus = (message, isError = false) => {
@@ -90,7 +89,7 @@
           <span>Innlogget som</span>
           <strong id="currentUser">Ikke innlogget</strong>
           <small id="currentRole">Logg inn for å bruke appen</small>
-          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v67 - venter på Supabase</p>
+          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v68 - venter på Supabase</p>
           <button
             id="accountLogoutButton"
             class="secondary-button full-button"
@@ -374,7 +373,6 @@
             </div>
             <div class="mobile-start-actions">
               <button id="newSortieButton" class="primary-button" type="button">Ny sortie</button>
-              <button id="installPwaButton" class="secondary-button hidden" type="button">Installer app</button>
             </div>
           </div>
 
@@ -539,6 +537,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=67"></script>
+    <script type="module" src="supabase-sync.js?v=68"></script>
   </body>
 </html>

@@ -181,7 +181,6 @@ let flightLogDroneFilter = "all";
 let flightLogModeFilter = "all";
 let flightLogMissionFilter = "all";
 let adminRenameSelectedUserId = "";
-let installPromptEvent = null;
 let deviceMode = detectDeviceMode();
 
 const views = {
@@ -329,19 +328,6 @@ function setupFlightLogMobileShell() {
 
   window.addEventListener("resize", applyDeviceMode);
   window.addEventListener("orientationchange", applyDeviceMode);
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    installPromptEvent = event;
-    if (deviceMode === "mobile") document.querySelector("#installPwaButton")?.classList.remove("hidden");
-  });
-
-  document.querySelector("#installPwaButton")?.addEventListener("click", async () => {
-    if (!installPromptEvent) return;
-    installPromptEvent.prompt();
-    await installPromptEvent.userChoice;
-    installPromptEvent = null;
-    document.querySelector("#installPwaButton")?.classList.add("hidden");
-  });
 }
 
 function normalizeTasks(tasks = [], length) {
