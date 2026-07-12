@@ -10,10 +10,10 @@
     <title>Veien til FPV</title>
     <link rel="icon" href="assets/droneflyver-icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/droneflyver-icon.svg" />
-    <link rel="stylesheet" href="styles.css?v=70" />
+    <link rel="stylesheet" href="styles.css?v=71" />
     <script>
       (() => {
-        const appVersion = "70";
+        const appVersion = "71";
         const versionKey = "droneflyver-client-version";
         window.DRONEFLYVER_APP_VERSION = appVersion;
         window.droneflyverReportStatus = (message, isError = false) => {
@@ -89,7 +89,7 @@
           <span>Innlogget som</span>
           <strong id="currentUser">Ikke innlogget</strong>
           <small id="currentRole">Logg inn for å bruke appen</small>
-          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v68 - venter på Supabase</p>
+          <p id="accountSyncStatus" class="sync-status" aria-live="polite">Appversjon v71 - venter på Supabase</p>
           <button
             id="accountLogoutButton"
             class="secondary-button full-button"
@@ -447,6 +447,23 @@
               <fieldset class="core-event-fieldset">
                 <legend>Core events</legend>
                 <div id="coreEventOptions" class="core-event-options"></div>
+                <div class="core-event-inline-legend" aria-label="Forklaring av core event-koder">
+                  <strong class="core-event-inline-title">Kodeforklaring</strong>
+                  <div class="core-event-inline-grid">
+                    <span><strong>TO</strong> Takeoff</span>
+                    <span><strong>LDG</strong> Landing</span>
+                    <span><strong>LOS</strong> Loss of signal / svak link</span>
+                    <span><strong>GPS</strong> GPS-problem</span>
+                    <span><strong>BAT</strong> Lav batterispenning / battery warning</span>
+                    <span><strong>RTH</strong> Return-to-home aktivert</span>
+                    <span><strong>OBS</strong> Obstacle / hindring</span>
+                    <span><strong>WX</strong> Værpåvirkning</span>
+                    <span><strong>PAY</strong> Payload event</span>
+                    <span><strong>CAM</strong> Kamera/sensor-hendelse</span>
+                    <span><strong>ABT</strong> Abortert sortie</span>
+                    <span><strong>MNT</strong> Vedlikehold kreves</span>
+                  </div>
+                </div>
               </fieldset>
 
               <div class="form-row wide">
@@ -471,10 +488,6 @@
               </div>
             </form>
 
-            <aside class="core-event-card">
-              <h3>Core event-koder</h3>
-              <div id="coreEventLegend" class="core-event-legend"></div>
-            </aside>
           </div>
 
           <div class="flight-log-table-wrap">
@@ -537,6 +550,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script type="module" src="supabase-sync.js?v=70"></script>
+    <script type="module" src="supabase-sync.js?v=71"></script>
   </body>
 </html>
