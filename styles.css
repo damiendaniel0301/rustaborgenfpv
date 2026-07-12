@@ -1239,6 +1239,14 @@ progress::-webkit-progress-value {
   min-height: 16px;
 }
 
+.core-event-option-text {
+  display: grid;
+}
+
+.core-event-option-text small {
+  display: none;
+}
+
 .core-event-card,
 .empty-log-card,
 .flight-log-card {
@@ -1456,7 +1464,71 @@ progress::-webkit-progress-value {
   display: none !important;
 }
 
+.device-mobile .core-event-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.device-mobile .core-event-card {
+  display: none;
+}
+
+.device-mobile .core-event-option {
+  align-items: start;
+  min-height: 58px;
+  padding: 9px 10px;
+}
+
+.device-mobile .core-event-option input {
+  margin-top: 2px;
+}
+
+.device-mobile .core-event-option-text {
+  gap: 2px;
+  min-width: 0;
+}
+
+.device-mobile .core-event-option-text small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 @media (max-width: 880px) {
+  .core-event-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .core-event-card {
+    display: none;
+  }
+
+  .core-event-option {
+    align-items: start;
+    min-height: 58px;
+    padding: 9px 10px;
+  }
+
+  .core-event-option input {
+    margin-top: 2px;
+  }
+
+  .core-event-option-text {
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .core-event-option-text small {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
   .app-shell {
     grid-template-columns: 1fr;
   }
@@ -1595,10 +1667,6 @@ progress::-webkit-progress-value {
     border-radius: 10px;
     background: var(--panel);
     box-shadow: var(--shadow-soft);
-  }
-
-  .device-mobile .core-event-card {
-    display: none;
   }
 
   .device-mobile .sticky-save-bar {

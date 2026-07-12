@@ -976,12 +976,15 @@ function renderCoreEventOptions() {
     .map(([code, label]) => `
       <label class="core-event-option">
         <input type="checkbox" value="${code}" />
-        <span>${code}</span>
+        <span class="core-event-option-text">
+          <strong>${code}</strong>
+          <small>${label}</small>
+        </span>
       </label>
     `)
     .join("");
 
-  legend.innerHTML = coreEventCodes
+  const legendMarkup = coreEventCodes
     .map(([code, label]) => `
       <div class="core-event-row">
         <strong>${code}</strong>
@@ -989,6 +992,8 @@ function renderCoreEventOptions() {
       </div>
     `)
     .join("");
+
+  legend.innerHTML = legendMarkup;
 }
 
 function setFlightLogFormDirty(isDirty) {
