@@ -773,7 +773,7 @@ async function bootAuthenticatedApp() {
   installLocalStorageSync();
 
   showAppAfterSignedIn();
-  await import("./app.js?v=68");
+  await import("./app.js?v=69");
   window.droneflyverApplyAuthState?.(authState);
   enforceAuthRoleView(authState);
   renderSecureAccountPanel();
