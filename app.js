@@ -970,6 +970,7 @@ function renderFlightLogSummary() {
 function renderCoreEventOptions() {
   const options = document.querySelector("#coreEventOptions");
   const legend = document.querySelector("#coreEventLegend");
+  const mobileLegend = document.querySelector("#coreEventMobileLegend");
   if (!options || !legend) return;
 
   options.innerHTML = coreEventCodes
@@ -981,7 +982,7 @@ function renderCoreEventOptions() {
     `)
     .join("");
 
-  legend.innerHTML = coreEventCodes
+  const legendMarkup = coreEventCodes
     .map(([code, label]) => `
       <div class="core-event-row">
         <strong>${code}</strong>
@@ -989,6 +990,9 @@ function renderCoreEventOptions() {
       </div>
     `)
     .join("");
+
+  legend.innerHTML = legendMarkup;
+  if (mobileLegend) mobileLegend.innerHTML = legendMarkup;
 }
 
 function setFlightLogFormDirty(isDirty) {

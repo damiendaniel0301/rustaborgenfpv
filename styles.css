@@ -1252,6 +1252,17 @@ progress::-webkit-progress-value {
   padding: 18px;
 }
 
+.core-event-mobile-reference {
+  display: none;
+}
+
+.core-event-mobile-reference-title {
+  color: var(--blue-strong);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .core-event-legend {
   display: grid;
   gap: 8px;
@@ -1599,6 +1610,25 @@ progress::-webkit-progress-value {
 
   .device-mobile .core-event-card {
     display: none;
+  }
+
+  .device-mobile .core-event-mobile-reference {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  .device-mobile .core-event-mobile-reference .core-event-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+  }
+
+  .device-mobile .core-event-mobile-reference .core-event-row {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 6px;
+    font-size: 13px;
   }
 
   .device-mobile .sticky-save-bar {
