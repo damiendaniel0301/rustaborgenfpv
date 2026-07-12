@@ -970,14 +970,16 @@ function renderFlightLogSummary() {
 function renderCoreEventOptions() {
   const options = document.querySelector("#coreEventOptions");
   const legend = document.querySelector("#coreEventLegend");
-  const mobileLegend = document.querySelector("#coreEventMobileLegend");
   if (!options || !legend) return;
 
   options.innerHTML = coreEventCodes
     .map(([code, label]) => `
       <label class="core-event-option">
         <input type="checkbox" value="${code}" />
-        <span>${code}</span>
+        <span class="core-event-option-text">
+          <strong>${code}</strong>
+          <small>${label}</small>
+        </span>
       </label>
     `)
     .join("");
@@ -992,7 +994,6 @@ function renderCoreEventOptions() {
     .join("");
 
   legend.innerHTML = legendMarkup;
-  if (mobileLegend) mobileLegend.innerHTML = legendMarkup;
 }
 
 function setFlightLogFormDirty(isDirty) {
