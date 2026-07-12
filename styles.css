@@ -1214,7 +1214,12 @@ progress::-webkit-progress-value {
   border-radius: 12px;
 }
 
-.core-event-options,
+.core-event-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .core-event-tags,
 .flight-log-actions {
   display: flex;
@@ -1224,10 +1229,10 @@ progress::-webkit-progress-value {
 
 .core-event-option {
   display: inline-flex;
-  align-items: center;
+  align-items: start;
   gap: 6px;
-  min-height: 36px;
-  padding: 0 10px;
+  min-height: 58px;
+  padding: 9px 10px;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: #f8fbfd;
@@ -1237,14 +1242,21 @@ progress::-webkit-progress-value {
 .core-event-option input {
   width: 16px;
   min-height: 16px;
+  margin-top: 2px;
 }
 
 .core-event-option-text {
   display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .core-event-option-text small {
-  display: none;
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .core-event-card,
@@ -1464,69 +1476,13 @@ progress::-webkit-progress-value {
   display: none !important;
 }
 
-.device-mobile .core-event-options {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .device-mobile .core-event-card {
   display: none;
 }
 
-.device-mobile .core-event-option {
-  align-items: start;
-  min-height: 58px;
-  padding: 9px 10px;
-}
-
-.device-mobile .core-event-option input {
-  margin-top: 2px;
-}
-
-.device-mobile .core-event-option-text {
-  gap: 2px;
-  min-width: 0;
-}
-
-.device-mobile .core-event-option-text small {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
 @media (max-width: 880px) {
-  .core-event-options {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .core-event-card {
     display: none;
-  }
-
-  .core-event-option {
-    align-items: start;
-    min-height: 58px;
-    padding: 9px 10px;
-  }
-
-  .core-event-option input {
-    margin-top: 2px;
-  }
-
-  .core-event-option-text {
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .core-event-option-text small {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.25;
   }
 
   .app-shell {
@@ -1572,6 +1528,10 @@ progress::-webkit-progress-value {
 }
 
 @media (max-width: 560px) {
+  .core-event-options {
+    grid-template-columns: 1fr;
+  }
+
   .topbar,
   .instructor-student-tabs,
   .section-heading,
