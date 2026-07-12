@@ -1252,6 +1252,10 @@ progress::-webkit-progress-value {
   padding: 18px;
 }
 
+.core-event-mobile-reference {
+  display: none;
+}
+
 .core-event-legend {
   display: grid;
   gap: 8px;
@@ -1599,6 +1603,18 @@ progress::-webkit-progress-value {
 
   .device-mobile .core-event-card {
     display: none;
+  }
+
+  .device-mobile .core-event-mobile-reference {
+    display: block;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  .device-mobile .core-event-mobile-reference h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
   }
 
   .device-mobile .sticky-save-bar {
