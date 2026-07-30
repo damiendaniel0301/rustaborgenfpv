@@ -140,7 +140,7 @@ const lessons = {
     },
     {
       title: "Trinn 16 - Eksamens flyvninger",
-      goal: "Bruk drone: Racewhoop 2.5\", bruk kamera vinkel 10 grader, og fullfør alle tre eksamensløpene innen 2:10.",
+      goal: "Bruk drone: Racewhoop 2.5\", bruk kamera vinkel 10 grader, og fullfør alle eksamensøvelser inne gitt tid.",
       video: "https://www.youtube.com/playlist?list=PLwoDb7WF6c8lCKhQOTy-Vb9LfW0VAIrTP"
     }
   ],
