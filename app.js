@@ -543,6 +543,9 @@ function setView(viewName) {
   };
   document.querySelector("#viewTitle").textContent = titles[viewName];
   
+  // Lagre aktiv view i sessionStorage
+  sessionStorage.setItem("droneflyt-active-view", viewName);
+  
   // Kjør manuell synkronisering ved bytte av fane
   if (window.droneflyverSync) {
     window.droneflyverSync();
@@ -1744,7 +1747,15 @@ window.droneflyverApplyAuthState = (authState = window.DRONEFLYVER_AUTH_STATE) =
   loadActiveStudentProgress();
   saveState();
   render();
-  if (isInstructorRole(state.user.role)) setView("review");
+  
+  // Gjenopprett aktiv view fra sessionStorage
+  const savedView = sessionStorage.getItem("droneflyt-active-view");
+  if (savedView) {
+    setView(savedView);
+    sessionStorage.removeItem("droneflyt-active-view");
+  } else if (isInstructorRole(state.user.role)) {
+    setView("review");
+  }
 };
 
 document.querySelectorAll(".nav-button").forEach((button) => {

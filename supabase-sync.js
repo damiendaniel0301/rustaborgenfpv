@@ -1,4 +1,5 @@
 const STORAGE_KEY = "droneflyt-state";
+const VIEW_STORAGE_KEY = "droneflyt-active-view";
 const config = window.DRONEFLYVER_SUPABASE || {};
 const configured = Boolean(
   window.supabase &&
@@ -573,6 +574,9 @@ async function refreshFromRemote() {
       return;
     }
     applyAuthState(normalizedRemoteData);
+    // Lagre aktiv view før reload
+    const currentView = document.querySelector(".nav-button.active")?.dataset.view || "dashboard";
+    sessionStorage.setItem(VIEW_STORAGE_KEY, currentView);
     window.location.reload();
     return;
   }
