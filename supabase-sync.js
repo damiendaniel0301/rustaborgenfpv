@@ -779,11 +779,8 @@ async function bootAuthenticatedApp() {
   renderSecureAccountPanel();
   setStatus(`Synkronisert - ${realStudentCount(sharedData)} elever`);
 
-  window.addEventListener("focus", refreshFromRemote);
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) refreshFromRemote();
-  });
-  window.setInterval(refreshFromRemote, remoteRefreshIntervalMs);
+  // Manuell synkronisering via window.droneflyverSync
+  window.droneflyverSync = refreshFromRemote;
 }
 
 bootAuthenticatedApp();

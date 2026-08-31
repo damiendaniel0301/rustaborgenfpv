@@ -542,6 +542,11 @@ function setView(viewName) {
     flightLog: "Flylogg"
   };
   document.querySelector("#viewTitle").textContent = titles[viewName];
+  
+  // Kjør manuell synkronisering ved bytte av fane
+  if (window.droneflyverSync) {
+    window.droneflyverSync();
+  }
 }
 
 function renderTaskList(stepKey, targetId) {
