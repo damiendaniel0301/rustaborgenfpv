@@ -130,6 +130,10 @@ textarea:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .app-shell.mobile-open {
+    overflow: hidden;
+  }
+
   .mobile-header {
     display: flex;
     position: sticky;
@@ -149,6 +153,7 @@ textarea:focus-visible {
   }
 
   .sidebar {
+    display: none;
     position: fixed;
     top: 0;
     left: -100%;
@@ -156,12 +161,14 @@ textarea:focus-visible {
     min-height: 100vh;
     max-height: none;
     padding: 16px;
+    overflow-y: auto;
     transition: left 0.3s ease;
     z-index: 999;
     flex-direction: column;
   }
 
   .sidebar.mobile-open {
+    display: flex;
     left: 0;
   }
 
@@ -182,14 +189,6 @@ textarea:focus-visible {
 
   .mobile-overlay.active {
     display: block;
-  }
-
-  .side-nav {
-    display: none;
-  }
-
-  .mobile-open .side-nav {
-    display: grid;
   }
 
   .account-card {

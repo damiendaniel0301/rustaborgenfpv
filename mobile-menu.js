@@ -19,11 +19,12 @@ document.addEventListener('DOMContentLoaded', function() {
       mobileOverlay.classList.toggle('active', newState);
     }
 
+    if (appShell) {
+      appShell.classList.toggle('mobile-open', newState);
+    }
+
     // Prevent body scroll when menu is open
     document.body.style.overflow = newState ? 'hidden' : '';
-    if (appShell) {
-      appShell.style.overflow = newState ? 'hidden' : '';
-    }
   }
 
   // Close menu function
@@ -35,10 +36,11 @@ document.addEventListener('DOMContentLoaded', function() {
       mobileOverlay.classList.remove('active');
     }
 
-    document.body.style.overflow = '';
     if (appShell) {
-      appShell.style.overflow = '';
+      appShell.classList.remove('mobile-open');
     }
+
+    document.body.style.overflow = '';
   }
 
   // Toggle button click handler
