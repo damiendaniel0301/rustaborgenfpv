@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const mobileMenuToggle = document.getElementById('mobileMenuToggle');
   const sidebar = document.querySelector('.sidebar');
   const mobileOverlay = document.getElementById('mobileOverlay');
+  const appShell = document.querySelector('.app-shell');
 
   if (!mobileMenuToggle || !sidebar) return;
 
@@ -20,6 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Prevent body scroll when menu is open
     document.body.style.overflow = newState ? 'hidden' : '';
+    if (appShell) {
+      appShell.style.overflow = newState ? 'hidden' : '';
+    }
   }
 
   // Close menu function
@@ -32,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.body.style.overflow = '';
+    if (appShell) {
+      appShell.style.overflow = '';
+    }
   }
 
   // Toggle button click handler
