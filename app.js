@@ -550,6 +550,13 @@ function setView(viewName) {
   if (window.droneflyverSync) {
     window.droneflyverSync();
   }
+  
+  // Forsikre at view er satt korrekt etter synk
+  const activeButton = document.querySelector(".nav-button.active");
+  if (activeButton && activeButton.dataset.view !== viewName) {
+    activeButton.classList.remove("active");
+    document.querySelector(`[data-view="${viewName}"]`)?.classList.add("active");
+  }
 }
 
 function renderTaskList(stepKey, targetId) {

@@ -574,9 +574,9 @@ async function refreshFromRemote() {
       return;
     }
     applyAuthState(normalizedRemoteData);
-    // Lagre aktiv view før reload
+    // Lagre aktiv view før reload - bruk riktig nøkkel
     const currentView = document.querySelector(".nav-button.active")?.dataset.view || "dashboard";
-    sessionStorage.setItem(VIEW_STORAGE_KEY, currentView);
+    sessionStorage.setItem("droneflyt-active-view", currentView);
     window.location.reload();
     return;
   }
