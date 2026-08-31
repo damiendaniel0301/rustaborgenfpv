@@ -1753,9 +1753,8 @@ window.droneflyverApplyAuthState = (authState = window.DRONEFLYVER_AUTH_STATE) =
 
   loadActiveStudentProgress();
   saveState();
-  render();
   
-  // Gjenopprett aktiv view fra sessionStorage
+  // Gjenopprett aktiv view fra sessionStorage FØR render
   const savedView = sessionStorage.getItem("droneflyt-active-view");
   if (savedView) {
     setView(savedView);
@@ -1763,6 +1762,8 @@ window.droneflyverApplyAuthState = (authState = window.DRONEFLYVER_AUTH_STATE) =
   } else if (isInstructorRole(state.user.role)) {
     setView("review");
   }
+  
+  render();
 };
 
 document.querySelectorAll(".nav-button").forEach((button) => {
