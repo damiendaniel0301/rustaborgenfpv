@@ -445,7 +445,8 @@ begin
       ), '[]'::jsonb),
       true
     ),
-    updated_at = now();
+    updated_at = now()
+  where true;
 
   return jsonb_build_object(
     'id', updated_profile.id,
