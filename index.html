@@ -51,21 +51,28 @@
   <body>
     <div class="app-shell">
       <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 48 48" role="img">
-              <path d="M24 17h10l5 5-5 5H24z" />
-              <path d="M24 17H14l-5 5 5 5h10z" />
-              <path d="M21 14h6v16h-6z" />
-              <circle cx="8" cy="14" r="6" />
-              <circle cx="40" cy="14" r="6" />
-              <circle cx="8" cy="34" r="6" />
-              <circle cx="40" cy="34" r="6" />
-            </svg>
-          </div>
-          <div>
-            <strong>Veien til FPV</strong>
-            <span>Simulator -> Tinywhoop -> Sertifisering/FPV</span>
+        <div class="mobile-header">
+          <button id="mobileMenuToggle" class="hamburger-menu" aria-label="Toggle meny" aria-expanded="false">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+          </button>
+          <div class="brand">
+            <div class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 48 48" role="img">
+                <path d="M24 17h10l5 5-5 5H24z" />
+                <path d="M24 17H14l-5 5 5 5h10z" />
+                <path d="M21 14h6v16h-6z" />
+                <circle cx="8" cy="14" r="6" />
+                <circle cx="40" cy="14" r="6" />
+                <circle cx="8" cy="34" r="6" />
+                <circle cx="40" cy="34" r="6" />
+              </svg>
+            </div>
+            <div>
+              <strong>Veien til FPV</strong>
+              <span>Simulator -> Tinywhoop -> Sertifisering/FPV</span>
+            </div>
           </div>
         </div>
 
@@ -527,10 +534,13 @@
         </section>
 
       </main>
+
+    <div id="mobileOverlay" class="mobile-overlay"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <script type="module" src="supabase-sync.js?v=68"></script>
+    <script src="mobile-menu.js?v=68"></script>
   </body>
 </html>
