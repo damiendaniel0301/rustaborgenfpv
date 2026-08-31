@@ -18,6 +18,7 @@ let lastRemoteSnapshot = "";
 let pushing = false;
 let lastPushHadError = false;
 let lastKnownStudentIds = new Set();
+let isSyncing = false;
 
 window.droneflyverHasUnsavedWork = window.droneflyverHasUnsavedWork || (() => false);
 window.droneflyverReportStatus?.(`Supabase-script startet v${window.DRONEFLYVER_APP_VERSION || "ukjent"}`);
@@ -553,7 +554,7 @@ function installLocalStorageSync() {
 }
 
 async function refreshFromRemote() {
-  if (!client || pushing || !authProfile) return;
+  if (!client || pushing || !authProfile || isSyncing) return;
   const remoteData = await fetchRemoteSharedData();
   if (!remoteData) return;
 
@@ -784,7 +785,16 @@ async function bootAuthenticatedApp() {
   setStatus(`Synkronisert - ${realStudentCount(sharedData)} elever`);
 
   // Manuell synkronisering via window.droneflyverSync
-  window.droneflyverSync = refreshFromRemote;
+  window.droneflyverSync = async () => {
+    if (isSyncing) return;
+    isSyncing = true;
+    try {
+      await refreshFromRemote();
+    } finally {
+      isSyncing = false;
+    }
+  };
+  window.droneflyverIsSyncing = () => isSyncing;
 }
 
 bootAuthenticatedApp();

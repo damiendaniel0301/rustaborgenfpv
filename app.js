@@ -546,16 +546,16 @@ function setView(viewName) {
   // Lagre aktiv view i sessionStorage
   sessionStorage.setItem("droneflyt-active-view", viewName);
   
-  // Kjør manuell synkronisering ved bytte av fane
-  if (window.droneflyverSync) {
-    window.droneflyverSync();
-  }
-  
-  // Forsikre at view er satt korrekt etter synk
+  // Forsikre at view er satt korrekt
   const activeButton = document.querySelector(".nav-button.active");
   if (activeButton && activeButton.dataset.view !== viewName) {
     activeButton.classList.remove("active");
     document.querySelector(`[data-view="${viewName}"]`)?.classList.add("active");
+  }
+  
+  // Kjør manuell synkronisering ved bytte av fane (kun hvis ikke allerede i synk)
+  if (window.droneflyverSync && !window.droneflyverIsSyncing) {
+    window.droneflyverSync();
   }
 }
 
